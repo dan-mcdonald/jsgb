@@ -1,0 +1,27 @@
+{
+  "name": "jsgb",
+  "version": "1.0.0",
+  "description": "",
+  "main": "node.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "eslint *.ts && mocha -r ts-node/register *.spec.ts",
+    "exec": "yarn run build && node node.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/chai": "^4.2.0",
+    "@types/mocha": "^5.2.7",
+    "@typescript-eslint/eslint-plugin": "^2.0.0",
+    "@typescript-eslint/parser": "^2.0.0",
+    "chai": "^4.2.0",
+    "eslint": "^6.2.1",
+    "mocha": "^6.2.0",
+    "ts-loader": "^6.0.4",
+    "ts-node": "^8.3.0",
+    "typescript": "^3.5.3",
+    "webpack": "^4.39.2",
+    "webpack-cli": "^3.3.7"
+  }
+}
