@@ -1,7 +1,7 @@
 "use strict";
 
 import {initCPU, step, dump} from "./cpu";
-import { buildBus } from "./bus";
+import buildBus from "./buildBus";
 import { ppuTick, ppuBuild } from "./ppu";
 import { audioInit } from "./audio";
 import {cartBuild} from "./cart";
@@ -62,7 +62,7 @@ window.onload = async function (): Promise<void> {
   while (true) {
     let cycles = step(cpu, writeb, readb);
     for (; cycles; cycles--) {
-      ppuTick(ppu);
+      ppuTick(ppu, writeb, readb);
     }
   }
 };
