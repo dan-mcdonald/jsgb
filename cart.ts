@@ -7,7 +7,7 @@ export interface Cart {
 
 export function cartBuild(rom: Uint8Array) {
   const cartType = rom[0x0147];
-  if (cartType != 0x00) {
+  if (cartType != 0x03) {
     throw new Error(`unsupported cart type ${hex8(cartType)}`);
   }
   return {
