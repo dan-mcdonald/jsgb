@@ -9,7 +9,6 @@ export default function buildBus(bootRom: Uint8Array, cart: Cart, ppu: PPU, audi
   let bootRomDisable = false;
   const hram = new Uint8Array(0x7f);
   const wram = new Uint8Array(0x2000); // C000-DFFF
-  const supportedPpuRegisters: Array<number> = [0xff40, 0xff42, 0xff43, 0xff44, 0xff46, 0xff47, 0xff48, 0xff49, 0xff4a, 0xff4b];
 
   const writeb = function(addr: number, val: number): void {
     if (addr >= 0x0000 && addr <= 0x7fff) {
@@ -21,9 +20,6 @@ export default function buildBus(bootRom: Uint8Array, cart: Cart, ppu: PPU, audi
     } else if(addr >= 0xff10 && addr <= 0xff3f) {
       audio.ioRegs[addr - 0xff10] = val;
     } else if(addr >= 0xff40 && addr <= 0xff4f) {
-      if (!supportedPpuRegisters.includes(addr)) {
-        throw new Error(`write to unsupported video register ${hex16(addr)}`);
-      }
       ppu.ioRegs[addr & 0x0f] = val;
     } else if (addr == 0xff50) {
       bootRomDisable = true;
@@ -45,9 +41,6 @@ export default function buildBus(bootRom: Uint8Array, cart: Cart, ppu: PPU, audi
     } else if (addr >= 0xff10 && addr <= 0xff3f) {
       return audio.ioRegs[addr - 0xff10];
     } else if (addr >= 0xff40 && addr <= 0xff4f) {
-      if (!supportedPpuRegisters.includes(addr)) {
-        throw new Error(`read from unsupported video register ${hex16(addr)}`);
-      }
       return ppu.ioRegs[addr & 0xf];
     } else if (addr >= 0xff80 && addr <= 0xfffe) {
       return hram[addr - 0xff80];

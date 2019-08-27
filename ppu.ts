@@ -7,6 +7,7 @@ enum Register {
   SCY = 0x2,
   SCX = 0x3,
   LY = 0x4,
+  LYC = 0x5,
   DMA = 0x6,
   BGP = 0x7,
   OBP0 = 0x8,
@@ -71,6 +72,20 @@ function clearDMA(ppu: PPU): void {
   ppu.ioRegs[Register.DMA] = 0;
 }
 
+const statLYCFlagMask = 0x04;
+
+function setLYCoincidence(ppu: PPU, val: boolean): void {
+  if(val) {
+    ppu.ioRegs[Register.STAT] |= statLYCFlagMask;
+  } else {
+    ppu.ioRegs[Register.STAT] &= ~statLYCFlagMask;
+  }
+}
+
+function getLYCompare(ppu: PPU): number {
+  return ppu.ioRegs[Register.LYC];
+}
+
 export function ppuTick(ppu: PPU, writeb: BusWrite, readb: BusRead): void {
   ppu.lineDot++;
   
@@ -112,4 +127,6 @@ export function ppuTick(ppu: PPU, writeb: BusWrite, readb: BusRead): void {
       }
       break;
   }
+
+  setLYCoincidence(ppu, getLine(ppu) === getLYCompare(ppu));
 }
