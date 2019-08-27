@@ -3,6 +3,7 @@ import {hex8, hex16} from "./util";
 export interface Cart {
   rom: Uint8Array;
   bank1Idx: number;
+  ramEnable: boolean;
 }
 
 export function cartBuild(rom: Uint8Array) {
@@ -12,13 +13,20 @@ export function cartBuild(rom: Uint8Array) {
   }
   return {
     rom: rom,
-    bank1Idx: 1
+    bank1Idx: 1,
+    ramEnable: false,
   };
 }
 
 export function cartWrite(cart: Cart, addr: number, val: number): void {
-  if (addr >= 0x2000 && addr <= 0x3fff) {
+  if (addr >= 0x0000 && addr <= 0x1fff) {
+    if (val != 0x0a) {
+      throw new Error(`unexpected value written to RAM enable range ${hex8(val)}`);
+    }
+    cart.ramEnable = true;
+  } else if (addr >= 0x2000 && addr <= 0x3fff) {
     cart.bank1Idx = Math.max(val, 1);
+    console.log(`bank 1 selects ${hex8(cart.bank1Idx)}`);
   } else {
     throw new Error(`unsupported write to cart at ${hex16(addr)} value ${hex8(val)}`);
   }
