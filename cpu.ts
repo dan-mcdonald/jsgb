@@ -206,6 +206,13 @@ export function step(cpu: CPU, writeb: bus.BusWrite, readb: bus.BusRead): number
     setC(result >= 0x100);
   };
 
+  const addR16R16 = function(dstHi: keyof CPU, dstLo: keyof CPU, srcHi: keyof CPU, srcLo: keyof CPU): void {
+    const dstVal = make16(cpu[dstHi], cpu[dstLo]);
+    const srcVal = make16(cpu[srcHi], cpu[srcLo]);
+    const newVal = (dstVal + srcVal) & 0xffff;
+    [cpu[dstHi], cpu[dstLo]] = break16(newVal);
+  }
+
   const execCB = function(): number {
     const inst = imm8();
     switch(inst) {
@@ -304,6 +311,10 @@ export function step(cpu: CPU, writeb: bus.BusWrite, readb: bus.BusRead): number
         logInst(`JR ${hex16(jaddr)}`);
         cpu.pc = jaddr;
         return 12;
+      case 0x19: // ADD HL,DE
+        logInst("ADD HL,DE");
+        addR16R16("h", "l", "d", "e");
+        return 8;
       case 0x1A: // LD A,(DE)
         logInst(`LD A,(DE)`);
         cpu.a = readb(make16(cpu.d, cpu.e));
