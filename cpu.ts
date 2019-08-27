@@ -483,6 +483,10 @@ export function step(cpu: CPU, writeb: bus.BusWrite, readb: bus.BusRead): number
         logInst("LD (C),A");
         writeb(0xff00 + cpu.c, cpu.a);
         return 8;
+      case 0xE5: // PUSH HL
+        logInst("PUSH HL");
+        push16(make16(cpu.h, cpu.l));
+        return 16;
       case 0xE6: // AND d8
         i8 = imm8();
         logInst(`AND ${hex8(i8)}`);
