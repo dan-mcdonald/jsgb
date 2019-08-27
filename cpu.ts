@@ -384,6 +384,11 @@ export function step(cpu: CPU, writeb: bus.BusWrite, readb: bus.BusRead): number
         ldAddrReg(make16(cpu.h, cpu.l), "a");
         dec16("h", "l");
         return 8;
+      case 0x36: // LD (HL),d8
+        i8 = imm8();
+        logInst(`LD (HL),${hex8(i8)}`);
+        writeb(make16(cpu.h, cpu.l), i8);
+        return 12;
       case 0x3D: // DEC A
         logInst("DEC A");
         decR8("a");
