@@ -277,6 +277,10 @@ export function step(cpu: CPU, writeb: bus.BusWrite, readb: bus.BusRead): number
         cpu.d = nn >> 8;
         cpu.e = nn & 0xff;
         return 12;
+      case 0x12: // LD (DE),A
+        logInst("LD (DE),A");
+        writeb(make16(cpu.d, cpu.e), cpu.a);
+        return 8;
       case 0x13: // INC DE
         logInst("INC DE");
         inc16("d", "e");
@@ -348,6 +352,11 @@ export function step(cpu: CPU, writeb: bus.BusWrite, readb: bus.BusRead): number
           cpu.pc = jaddr;
           return 12;
         }
+        return 8;
+      case 0x2A: // LD A,(HL+)
+        logInst("LD A,(HL+)");
+        cpu.a = readb(make16(cpu.h, cpu.l));
+        inc16("h", "l");
         return 8;
       case 0x2E: // LD E,n
         i8 = imm8();
