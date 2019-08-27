@@ -4,9 +4,8 @@
   "description": "",
   "main": "node.js",
   "scripts": {
-    "build": "tsc",
     "test": "eslint *.ts && mocha -r ts-node/register *.spec.ts",
-    "exec": "yarn run build && node node.js"
+    "exec": "npx ts-node node.js"
   },
   "author": "",
   "license": "ISC",
