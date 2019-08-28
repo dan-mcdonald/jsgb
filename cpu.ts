@@ -467,6 +467,10 @@ export function step(cpu: CPU, writeb: bus.BusWrite, readb: bus.BusRead): number
         logInst("OR C");
         or(cpu.c);
         return 4;
+      case 0xB2: // OR D
+        logInst("OR D");
+        or(cpu.d);
+        return 4;
       case 0xB9: // CP C
         logInst("CP C");
         cp(cpu.c);
