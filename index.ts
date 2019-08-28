@@ -59,7 +59,8 @@ window.onload = async function (): Promise<void> {
   const [writeb, readb] = buildBus(bootRom, cart, ppu, audio);
 
   // let i = 0;
-  while (true) {
+
+  while (true) {   // eslint-disable-line
     let cycles = step(cpu, writeb, readb);
     for (; cycles; cycles--) {
       ppuTick(ppu, writeb, readb);

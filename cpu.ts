@@ -147,7 +147,7 @@ export function step(cpu: CPU, writeb: bus.BusWrite, readb: bus.BusRead): number
     writeb(addr, cpu[reg]);
   };
 
-  const ldR16 = function(regHi: keyof CPU, regLo: keyof CPU, value: number) {
+  const ldR16 = function(regHi: keyof CPU, regLo: keyof CPU, value: number): void {
     cpu[regHi] = value >> 8;
     cpu[regLo] = value & 0xff;
   };
