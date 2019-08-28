@@ -373,6 +373,10 @@ export function step(cpu: CPU, writeb: bus.BusWrite, readb: bus.BusRead): number
         cpu.a = readb(make16(cpu.h, cpu.l));
         inc16("h", "l");
         return 8;
+      case 0x2C: // INC L
+        logInst("INC L");
+        incR8("l");
+        return 4;
       case 0x2E: // LD E,n
         i8 = imm8();
         logInst(`LD E,${hex8(i8)}`);
