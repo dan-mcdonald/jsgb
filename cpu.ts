@@ -319,6 +319,10 @@ export function step(cpu: CPU, writeb: bus.BusWrite, readb: bus.BusRead): number
         logInst(`LD A,(DE)`);
         cpu.a = readb(make16(cpu.d, cpu.e));
         return 8;
+      case 0x1B: // DEC DE
+        logInst("DEC DE");
+        dec16("d", "e");
+        return 8;
       case 0x1D: // DEC E
         logInst("DEC E");
         decR8("e");
