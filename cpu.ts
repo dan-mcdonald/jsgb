@@ -389,6 +389,10 @@ export function step(cpu: CPU, writeb: bus.BusWrite, readb: bus.BusRead): number
         logInst(`LD (HL),${hex8(i8)}`);
         writeb(make16(cpu.h, cpu.l), i8);
         return 12;
+      case 0x3C: // INC A
+        logInst("INC A");
+        incR8("a");
+        return 4;
       case 0x3D: // DEC A
         logInst("DEC A");
         decR8("a");
