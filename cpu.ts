@@ -484,6 +484,10 @@ export function step(cpu: CPU, writeb: bus.BusWrite, readb: bus.BusRead): number
         logInst(`LDH (${hex16(nn)}),A`)
         writeb(nn, cpu.a);
         return 12;
+      case 0xE1: // POP HL
+        logInst("POP HL");
+        [cpu.h, cpu.l] = break16(pop16());
+        return 12;
       case 0xE2: // LD (C),A
         logInst("LD (C),A");
         writeb(0xff00 + cpu.c, cpu.a);
