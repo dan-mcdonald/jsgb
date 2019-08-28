@@ -536,6 +536,11 @@ export function step(cpu: CPU, writeb: bus.BusWrite, readb: bus.BusRead): number
         logInst(`LDH A,(ff00+${hex8(i8)})`);
         cpu.a = readb(0xff00 | i8);
         return 12;
+      case 0xFA: // LD A,(a16)
+        nn = imm16();
+        logInst(`LD A,(${hex16(nn)})`);
+        cpu.a = readb(nn);
+        return 16;
       case 0xFE: // CP i8
         i8 = imm8();
         logInst(`CP ${hex8(i8)}`);
