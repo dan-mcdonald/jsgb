@@ -500,6 +500,14 @@ export function step(cpu: CPU, writeb: bus.BusWrite, readb: bus.BusRead): number
         logInst("RET");
         cpu.pc = pop16();
         return 16;
+      case 0xCA: // JP Z,a16
+        nn = imm16();
+        logInst(`JP Z,${hex16(nn)}`);
+        if (getZ()) {
+          cpu.pc = nn;
+          return 16;
+        }
+        return 12;
       case 0xCB: // CB prefix
         return execCB();
       case 0xCD: // CALL a16
