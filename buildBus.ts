@@ -11,7 +11,7 @@ export default function buildBus(bootRom: Uint8Array, cart: Cart, ppu: PPU, audi
   const wram = new Uint8Array(0x2000); // C000-DFFF
 
   const writeb = function(addr: number, val: number): void {
-    if (addr >= 0x0000 && addr <= 0x7fff) {
+    if (addr <= 0x7fff || (addr >= 0xa000 && addr <= 0xbfff)) {
       cartWrite(cart, addr, val);
     } else if (addr >= 0x8000 && addr <= 0x9fff) {
       ppu.vram[0x7fff & addr] = val;
@@ -32,9 +32,9 @@ export default function buildBus(bootRom: Uint8Array, cart: Cart, ppu: PPU, audi
     }
   };
   const readb = function(addr: number): number {
-    if (addr < 0x0100 && !bootRomDisable) {
+    if (addr >= 0x0000 && addr <= 0x00ff && !bootRomDisable) {
       return bootRom[addr];
-    } else if (addr <= 0x7fff) {
+    } else if (addr <= 0x7fff || (addr >= 0xa000 && addr <= 0xbfff)) {
       return cartRead(cart, addr);
     } else if(addr >= 0xc000 && addr <= 0xdfff) {
       return wram[addr - 0xc000];
