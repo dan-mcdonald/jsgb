@@ -459,6 +459,10 @@ export function step(cpu: CPU, writeb: bus.BusWrite, readb: bus.BusRead): number
         logInst("SUB B");
         subR8("b");
         return 4;
+      case 0xA7: // AND A
+        logInst("AND A");
+        and(cpu.a);
+        return 4;
       case 0xAF: // XOR A
         logInst("XOR A");
         xor("a");
