@@ -5,7 +5,7 @@ import {Audio} from "./audio";
 import {Cart, cartRead, cartWrite} from "./cart";
 
 export default function buildBus(bootRom: Uint8Array, cart: Cart, ppu: PPU, audio: Audio): [BusWrite, BusRead] {
-  let iereg = 0;
+  let ie = 0;
   let bootRomDisable = false;
   const hram = new Uint8Array(0x7f);
   const wram = new Uint8Array(0x2000); // C000-DFFF
@@ -26,7 +26,7 @@ export default function buildBus(bootRom: Uint8Array, cart: Cart, ppu: PPU, audi
     } else if (addr >= 0xff80 && addr <= 0xfffe) {
       hram[addr - 0xff80] = val;
     } else if (addr == 0xffff) {
-      iereg = val;
+      ie = val;
     } else {
       throw new Error(`writeb unsupported addr ${hex16(addr)}`);
     }
@@ -45,7 +45,7 @@ export default function buildBus(bootRom: Uint8Array, cart: Cart, ppu: PPU, audi
     } else if (addr >= 0xff80 && addr <= 0xfffe) {
       return hram[addr - 0xff80];
     } else if (addr == 0xffff) {
-      return iereg;
+      return ie;
     } else {
       throw new Error(`readb unsupported addr ${hex16(addr)}`);
     }

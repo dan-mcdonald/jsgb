@@ -8,39 +8,39 @@ describe("dec b", (): void => {
 
   it("decrements 4 to 3", () => {
     const cpu = initCPU();
-    cpu.b = 4;
+    cpu.regs.b = 4;
     step(cpu, writeb, readb);
-    expect(cpu.b).to.equal(3);
+    expect(cpu.regs.b).to.equal(3);
   });
 
   it("clears Z flag when previously set", (): void => {
     const cpu = initCPU();
-    cpu.b = 4;
-    cpu.f |= maskZ;
+    cpu.regs.b = 4;
+    cpu.regs.f |= maskZ;
     expect(step(cpu, writeb, readb)).to.equal(4);
-    expect(cpu.f & maskZ).to.equal(0);
+    expect(cpu.regs.f & maskZ).to.equal(0);
   });
 
   it("clears Z flag when previously clear", (): void => {
     const cpu = initCPU();
-    cpu.b = 4;
+    cpu.regs.b = 4;
     expect(step(cpu, writeb, readb)).to.equal(4);
-    expect(cpu.f & maskZ).to.equal(0);
+    expect(cpu.regs.f & maskZ).to.equal(0);
   });
 
   it("sets Z flag when previously set", (): void => {
     const cpu = initCPU();
-    cpu.b = 1;
-    cpu.f |= maskZ;
+    cpu.regs.b = 1;
+    cpu.regs.f |= maskZ;
     expect(step(cpu, writeb, readb)).to.equal(4);
-    expect(cpu.f & maskZ).to.equal(maskZ);
+    expect(cpu.regs.f & maskZ).to.equal(maskZ);
   });
 
   it("sets Z flag when previously clear", (): void => {
     const cpu = initCPU();
-    cpu.b = 1;
+    cpu.regs.b = 1;
     expect(step(cpu, writeb, readb)).to.equal(4);
-    expect(cpu.f & maskZ).to.equal(maskZ);
+    expect(cpu.regs.f & maskZ).to.equal(maskZ);
   });
 
 });
