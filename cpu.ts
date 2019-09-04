@@ -17,6 +17,7 @@ interface Registers {
 interface CPU {
 	pc: number;
   ime: boolean;
+  halt: boolean;
   regs: Registers;
 }
 
@@ -24,6 +25,7 @@ export function initCPU(): CPU {
   return {
     pc: 0x0000,
     ime: false,
+    halt: false,
     regs: {
       sp: 0x0000,
       a: 0x00,
@@ -256,8 +258,12 @@ export function step(cpu: CPU, bus: Bus): number {
       const vector = interruptVector(intPending);
       // console.log(`Servicing interrupt at vector ${hex16(vector)}`);
       cpu.ime = false;
+      cpu.halt = false;
       clearInterrupt(bus, intPending);
       call(vector);
+      return 4;
+    }
+    if (cpu.halt) {
       return 4;
     }
     let nn;
@@ -456,6 +462,10 @@ export function step(cpu: CPU, bus: Bus): number {
       case 0x67: // LD H,A
         logInst("LD H,A");
         cpu.regs.h = cpu.regs.a;
+        return 4;
+      case 0x76: // HALT
+        logInst("HALT");
+        cpu.halt = true;
         return 4;
       case 0x77: // LD (HL),A
         logInst("LD (HL),A");
