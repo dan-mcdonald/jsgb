@@ -702,6 +702,10 @@ export function step(cpu: CPU, bus: Bus): number {
         logInst(`AND ${hex8(i8)}`);
         and(i8);
         return 8;
+      case 0xE9: // JP HL
+        logInst("JP HL");
+        cpu.pc = make16(cpu.regs.h, cpu.regs.l);
+        return 4;
       case 0xEA: // LD (nn),A
         nn = imm16();
         logInst(`LD (${hex16(nn)}),A`);
