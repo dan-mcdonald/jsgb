@@ -30,10 +30,7 @@ export function cartBuild(rom: Uint8Array): Cart {
 
 export function cartWrite(cart: Cart, addr: number, val: number): void {
   if (addr >= 0x0000 && addr <= 0x1fff) {
-    if (val != 0x0a) {
-      throw new Error(`unexpected value written to RAM enable range ${hex8(val)}`);
-    }
-    cart.ramEnable = true;
+    cart.ramEnable = (val & 0x0f) === 0x0a;
   } else if (addr >= 0x2000 && addr <= 0x3fff) {
     cart.bank1Idx = Math.max(val, 1);
     console.log(`bank 1 selects ${hex8(cart.bank1Idx)}`);
