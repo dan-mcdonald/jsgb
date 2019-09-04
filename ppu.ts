@@ -1,5 +1,6 @@
 import {Bus} from "./bus";
 import {hex8} from "./util";
+import {Interrupt, setInterrupt} from "./interrupt";
 
 enum Register {
   LCDC = 0x0,
@@ -102,7 +103,13 @@ export function ppuTick(ppu: PPU, bus: Bus): void {
       if (ppu.lineDot === 456) {
         ppu.lineDot = 0;
         setLine(ppu, getLine(ppu) + 1);
-        setMode(ppu, getLine(ppu) === 144 ? Mode.ONE : Mode.TWO);
+        if (getLine(ppu) === 144) {
+          setMode(ppu, Mode.ONE);
+          setInterrupt(bus, Interrupt.VBlank);
+        } else {
+          setMode(ppu, Mode.TWO);
+          // TODO clear vblank interrupt?
+        }
       }
       break;
     case Mode.ONE:
