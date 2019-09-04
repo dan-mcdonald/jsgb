@@ -550,6 +550,10 @@ export function step(cpu: CPU, bus: Bus): number {
         logInst("XOR A");
         xor("a");
         return 4;
+      case 0xB0: // OR B
+        logInst("OR B");
+        or(cpu.regs.b);
+        return 4;
       case 0xB1: // OR C
         logInst("OR C");
         or(cpu.regs.c);
