@@ -422,6 +422,12 @@ export function step(cpu: CPU, bus: Bus): number {
         logInst(`LD E,${hex8(i8)}`);
         cpu.regs.e = i8;
         return 8;
+      case 0x2F: // CPL
+        logInst("CPL");
+        cpu.regs.a = ~cpu.regs.a & 0xff;
+        setN(true);
+        setH(true);
+        return 4;
       case 0x31: // LD SP,d16
         nn = imm16();
         logInst(`LD SP, ${hex16(nn)}`);
