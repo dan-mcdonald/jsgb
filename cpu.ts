@@ -572,6 +572,13 @@ export function step(cpu: CPU, bus: Bus): number {
         logInst("PUSH BC");
         push16(make16(cpu.regs.b, cpu.regs.c));
         return 16;
+      case 0xC8: // RET Z
+        logInst("RET Z");
+        if(getZ()) {
+          cpu.pc = pop16();
+          return 20;
+        }
+        return 8;
       case 0xC9: // RET
         logInst("RET");
         cpu.pc = pop16();
