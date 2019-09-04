@@ -1,4 +1,4 @@
-import {BusRead, BusWrite} from "./bus";
+import {Bus} from "./bus";
 import {hex8} from "./util";
 
 enum Register {
@@ -86,13 +86,13 @@ function getLYCompare(ppu: PPU): number {
   return ppu.ioRegs[Register.LYC];
 }
 
-export function ppuTick(ppu: PPU, writeb: BusWrite, readb: BusRead): void {
+export function ppuTick(ppu: PPU, bus: Bus): void {
   ppu.lineDot++;
   
   const dmaSrcAddr = getDMASrcAddr(ppu);
   if (dmaSrcAddr != null) {
     for(let i = 0; i < ppu.oam.length; i++) {
-      ppu.oam[i] = readb(dmaSrcAddr + i);
+      ppu.oam[i] = bus.readb(dmaSrcAddr + i);
     }
     clearDMA(ppu);
   }

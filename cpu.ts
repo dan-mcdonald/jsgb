@@ -1,5 +1,6 @@
-import * as bus from "./bus";
+import {Bus} from "./bus";
 import {u8tos8, make16, break16, hex8, hex16} from "./util";
+import {interruptVector, interruptPending, clearInterrupt} from "./interrupt";
 
 interface Registers {
 	sp: number;
@@ -47,7 +48,8 @@ export function dump(cpu: CPU): string {
 }
 
 // https://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
-export function step(cpu: CPU, writeb: bus.BusWrite, readb: bus.BusRead): number {
+export function step(cpu: CPU, bus: Bus): number {
+  const {readb, writeb} = bus;
   const instAddr = cpu.pc;
 
   const push16 = function(word: number): void {
@@ -221,7 +223,12 @@ export function step(cpu: CPU, writeb: bus.BusWrite, readb: bus.BusRead): number
     const srcVal = make16(cpu.regs[srcHi], cpu.regs[srcLo]);
     const newVal = (dstVal + srcVal) & 0xffff;
     [cpu.regs[dstHi], cpu.regs[dstLo]] = break16(newVal);
-  }
+  };
+
+  const call = function(addr: number): void {
+    push16(cpu.pc);
+    cpu.pc = addr;
+  };
 
   const execCB = function(): number {
     const inst = imm8();
@@ -244,6 +251,15 @@ export function step(cpu: CPU, writeb: bus.BusWrite, readb: bus.BusRead): number
   };
 
   try {
+    const intPending = interruptPending(bus);
+    if (cpu.ime && intPending != null) {
+      const vector = interruptVector(intPending);
+      // console.log(`Servicing interrupt at vector ${hex16(vector)}`);
+      cpu.ime = false;
+      clearInterrupt(bus, intPending);
+      call(vector);
+      return 4;
+    }
     let nn;
     let i8;
     let jaddr;
@@ -527,8 +543,7 @@ export function step(cpu: CPU, writeb: bus.BusWrite, readb: bus.BusRead): number
       case 0xCD: // CALL a16
         nn = imm16();
         logInst(`CALL ${hex16(nn)}`);
-        push16(cpu.pc);
-        cpu.pc = nn;
+        call(nn);
         return 24;
       case 0xE0: // LDH (a8),A
         nn = 0xff00 + imm8();
@@ -567,6 +582,10 @@ export function step(cpu: CPU, writeb: bus.BusWrite, readb: bus.BusRead): number
         logInst(`LD A,(${hex16(nn)})`);
         cpu.regs.a = readb(nn);
         return 16;
+      case 0xFB: // EI
+        logInst("EI");
+        cpu.ime = true;
+        return 4;
       case 0xFE: // CP i8
         i8 = imm8();
         logInst(`CP ${hex8(i8)}`);

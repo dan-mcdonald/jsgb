@@ -56,14 +56,14 @@ window.onload = async function (): Promise<void> {
   const ppu = ppuBuild();
   const audio = audioInit();
 
-  const [writeb, readb] = buildBus(bootRom, cart, ppu, audio);
+  const bus = buildBus(bootRom, cart, ppu, audio);
 
   // let i = 0;
 
   while (true) {   // eslint-disable-line
-    let cycles = step(cpu, writeb, readb);
+    let cycles = step(cpu, bus);
     for (; cycles; cycles--) {
-      ppuTick(ppu, writeb, readb);
+      ppuTick(ppu, bus);
     }
   }
 };
