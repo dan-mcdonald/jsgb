@@ -517,6 +517,14 @@ export function step(cpu: CPU, bus: Bus): number {
         logInst("POP BC");
         [cpu.regs.b, cpu.regs.c] = break16(pop16());
         return 12;
+      case 0xC2: // JP NZ,a16
+        nn = imm16();
+        logInst(`JP NZ,${hex16(nn)}`);
+        if (!getZ()) {
+          cpu.pc = nn;
+          return 16;
+        }
+        return 12;
       case 0xC3: // JP a16
         nn = imm16();
         logInst(`JP ${hex16(nn)}`);
