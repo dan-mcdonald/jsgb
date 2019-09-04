@@ -137,6 +137,16 @@ export function step(cpu: CPU, bus: Bus): number {
     setC(false);
   };
 
+  const rr = function(reg: keyof Registers): void {
+    const oldVal = cpu.regs[reg];
+    const newVal = (oldVal >> 1) | (getC() ? 0x80 : 0x00);
+    cpu.regs[reg] = newVal;
+    setZ(false);
+    setN(false);
+    setH(false);
+    setC((oldVal & 0x01) !== 0);
+  };
+
   const rl = function(reg: keyof Registers): void {
     const oldVal = cpu.regs[reg];
     const newVal = (oldVal << 1) | Number(getC());
@@ -403,6 +413,10 @@ export function step(cpu: CPU, bus: Bus): number {
         logInst(`LD E,${hex8(i8)}`);
         cpu.regs.e = i8;
         return 8;
+      case 0x1F: // RRA
+        logInst("RRA");
+        rr("a");
+        return 4;
       case 0x20: // JR NZ,r8
         i8 = imm8();
         jaddr = cpu.pc + u8tos8(i8);
