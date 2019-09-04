@@ -546,6 +546,10 @@ export function step(cpu: CPU, bus: Bus): number {
         logInst("AND A");
         and(cpu.regs.a);
         return 4;
+      case 0xA9: // XOR C
+        logInst("XOR C");
+        xor("c");
+        return 4;
       case 0xAF: // XOR A
         logInst("XOR A");
         xor("a");
