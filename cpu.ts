@@ -561,6 +561,11 @@ export function step(cpu: CPU, bus: Bus): number {
         logInst("PUSH DE");
         push16(make16(cpu.regs.d, cpu.regs.e));
         return 16;
+      case 0xD9: // RETI
+        logInst("RETI");
+        cpu.ime = true;
+        cpu.pc = pop16();
+        return 16;
       case 0xE0: // LDH (a8),A
         nn = 0xff00 + imm8();
         logInst(`LDH (${hex16(nn)}),A`)
