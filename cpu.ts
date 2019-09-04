@@ -553,6 +553,10 @@ export function step(cpu: CPU, bus: Bus): number {
         logInst(`CALL ${hex16(nn)}`);
         call(nn);
         return 24;
+      case 0xD1: // POP DE
+        logInst("POP DE");
+        [cpu.regs.d, cpu.regs.e] = break16(pop16());
+        return 12;
       case 0xD5: // PUSH DE
         logInst("PUSH DE");
         push16(make16(cpu.regs.d, cpu.regs.e));
@@ -588,6 +592,10 @@ export function step(cpu: CPU, bus: Bus): number {
         i8 = imm8();
         logInst(`LDH A,(ff00+${hex8(i8)})`);
         cpu.regs.a = readb(0xff00 | i8);
+        return 12;
+      case 0xF1: // POP AF
+        logInst("POP AF");
+        [cpu.regs.a, cpu.regs.f] = break16(pop16());
         return 12;
       case 0xF3: // DI
         logInst("DI");
