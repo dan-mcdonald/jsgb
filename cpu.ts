@@ -194,6 +194,14 @@ export function step(cpu: CPU, bus: Bus): number {
     setN(false);
   };
 
+  const incAddrHL = function(): void {
+    const addr = make16(cpu.regs.h, cpu.regs.l);
+    const newVal = (readb(addr) + 1) & 0xff;
+    writeb(addr, newVal);
+    setZ(newVal === 0);
+    setN(false);
+  };
+
   const cp = function(val: number): void {
     setZ(cpu.regs.a == val);
     setN(true);
@@ -424,6 +432,10 @@ export function step(cpu: CPU, bus: Bus): number {
         ldAddrReg(make16(cpu.regs.h, cpu.regs.l), "a");
         dec16("h", "l");
         return 8;
+      case 0x34: // INC (HL)
+        logInst("INC (HL)");
+        incAddrHL();
+        return 12;
       case 0x36: // LD (HL),d8
         i8 = imm8();
         logInst(`LD (HL),${hex8(i8)}`);
