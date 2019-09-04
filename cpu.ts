@@ -505,6 +505,10 @@ export function step(cpu: CPU, bus: Bus): number {
         logInst("OR D");
         or(cpu.regs.d);
         return 4;
+      case 0xB6: // OR (HL)
+        logInst("OR (HL)");
+        or(readb(make16(cpu.regs.h, cpu.regs.l)));
+        return 8;
       case 0xB9: // CP C
         logInst("CP C");
         cp(cpu.regs.c);
