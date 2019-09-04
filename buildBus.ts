@@ -1,5 +1,5 @@
 import {Bus} from "./bus";
-import {hex16} from "./util";
+import {hex8, hex16} from "./util";
 import {PPU} from "./ppu";
 import {Audio} from "./audio";
 import {Cart, cartRead, cartWrite} from "./cart";
@@ -8,6 +8,7 @@ export default function buildBus(bootRom: Uint8Array, cart: Cart, ppu: PPU, audi
   let intEnable = 0;
   let intFlag = 0;
   let bootRomDisable = false;
+  let joyp = 0xff;
   const hram = new Uint8Array(0x7f);
   const wram = new Uint8Array(0x2000); // C000-DFFF
 
@@ -18,7 +19,15 @@ export default function buildBus(bootRom: Uint8Array, cart: Cart, ppu: PPU, audi
       ppu.vram[0x7fff & addr] = val;
     } else if(addr >= 0xc000 && addr <= 0xdfff) {
       wram[addr - 0xc000] = val;
-    } else if(addr === 0xff0f) {
+    } else if(addr == 0xff00) {
+      if (val == 0x10) {
+        joyp = 0xDF;
+      } else if (val == 0x20) {
+        joyp = 0xEF;
+      } else {
+        throw new Error(`Unexpected value ${hex8(val)} write to JOYP`);
+      }
+    } else if(addr == 0xff0f) {
       intFlag = val;
     } else if(addr >= 0xff10 && addr <= 0xff3f) {
       audio.ioRegs[addr - 0xff10] = val;
@@ -41,6 +50,8 @@ export default function buildBus(bootRom: Uint8Array, cart: Cart, ppu: PPU, audi
       return cartRead(cart, addr);
     } else if(addr >= 0xc000 && addr <= 0xdfff) {
       return wram[addr - 0xc000];
+    } else if (addr == 0xff00) {
+      return joyp;
     } else if (addr == 0xff0f) {
       return intFlag;
     } else if (addr >= 0xff10 && addr <= 0xff3f) {
