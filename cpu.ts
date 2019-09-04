@@ -147,6 +147,16 @@ export function step(cpu: CPU, bus: Bus): number {
     setC(Boolean(newVal & 0x100));
   };
 
+  const sla = function(reg: keyof Registers): void {
+    const oldVal = cpu.regs[reg];
+    const newVal = (oldVal << 1) & 0xff;
+    cpu.regs[reg] = newVal;
+    setZ(newVal === 0);
+    setN(false);
+    setH(false);
+    setC((newVal & 0x80) !== 0);
+  }
+
   const bit = function(mask: number, reg: keyof Registers): void {
     setZ((cpu.regs[reg] & mask) === 0);
     setN(false);
@@ -255,6 +265,10 @@ export function step(cpu: CPU, bus: Bus): number {
       case 0x11: // RL C
         logInst("RL C");
         rl("c");
+        return 8;
+      case 0x23: // SLA E
+        logInst("SLA E");
+        sla("e");
         return 8;
       case 0x37: // SWAP A
         logInst("SWAP A");
