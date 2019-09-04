@@ -240,12 +240,25 @@ export function step(cpu: CPU, bus: Bus): number {
     cpu.pc = addr;
   };
 
+  const swapR8 = function(reg: keyof Registers): void {
+    const oldVal = cpu.regs[reg];
+    const lowNibble = oldVal & 0x0f;
+    const highNibble = oldVal & 0xf0;
+    const newVal = (lowNibble << 4) | (highNibble >> 4);
+    cpu.regs[reg] = newVal;
+    setZ(oldVal === 0);
+  };
+
   const execCB = function(): number {
     const inst = imm8();
     switch(inst) {
       case 0x11: // RL C
         logInst("RL C");
         rl("c");
+        return 8;
+      case 0x37: // SWAP A
+        logInst("SWAP A");
+        swapR8("a");
         return 8;
       case 0x7c: // BIT 7,H
         logInst("BIT 7,H");

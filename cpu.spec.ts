@@ -43,5 +43,17 @@ describe("dec b", (): void => {
     expect(step(cpu, bus)).to.equal(4);
     expect(cpu.regs.f & maskZ).to.equal(maskZ);
   });
+});
 
+describe("swap a", (): void => {
+  const readb = (addr: number): number => [0xcb, 0x37][addr];
+  const writeb = (addr: number, val: number): void => {};
+  const bus = {readb, writeb};
+
+  it("swaps a5 -> 5a", () => {
+    const cpu = initCPU();
+    cpu.regs.a = 0xa5;
+    step(cpu, bus);
+    expect(cpu.regs.a).to.equal(0x5a);
+  });
 });
