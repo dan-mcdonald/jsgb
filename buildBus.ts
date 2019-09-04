@@ -20,13 +20,10 @@ export default function buildBus(bootRom: Uint8Array, cart: Cart, ppu: PPU, audi
     } else if(addr >= 0xc000 && addr <= 0xdfff) {
       wram[addr - 0xc000] = val;
     } else if(addr == 0xff00) {
-      if (val == 0x10) {
-        joyp = 0xDF;
-      } else if (val == 0x20) {
-        joyp = 0xEF;
-      } else {
+      if ((val | 0x30) != 0x30) {
         throw new Error(`Unexpected value ${hex8(val)} write to JOYP`);
       }
+      joyp = 0xcf | val;
     } else if(addr == 0xff0f) {
       intFlag = val;
     } else if(addr >= 0xff10 && addr <= 0xff3f) {
