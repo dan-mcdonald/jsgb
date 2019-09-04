@@ -459,6 +459,15 @@ export function step(cpu: CPU, bus: Bus): number {
         setN(true);
         setH(true);
         return 4;
+      case 0x30: // JR NC,r8
+        i8 = imm8();
+        jaddr = cpu.pc + u8tos8(i8);
+        logInst(`JR NC,${hex16(jaddr)}`);
+        if (!getC()) {
+          cpu.pc = jaddr;
+          return 12;
+        }
+        return 8;
       case 0x31: // LD SP,d16
         nn = imm16();
         logInst(`LD SP, ${hex16(nn)}`);
