@@ -229,12 +229,12 @@ export function step(cpu: CPU, bus: Bus): number {
     setC(cpu.regs.a < val);
   };
 
-  const subR8 = function(reg: keyof Registers): void {
+  const sub = function(val: number): void {
     const oldA = cpu.regs.a;
-    const newA = cpu.regs.a = ((oldA - cpu.regs[reg]) & 0xff);
+    const newA = cpu.regs.a = ((oldA - val) & 0xff);
     setZ(newA === 0);
     setN(true);
-    setH(false);
+    setH(false); // TODO check borrow appropriately
     setC(cpu.regs.b > oldA);
   };
 
@@ -593,7 +593,7 @@ export function step(cpu: CPU, bus: Bus): number {
         return 8;
       case 0x90: // SUB B
         logInst("SUB B");
-        subR8("b");
+        sub(cpu.regs.b);
         return 4;
       case 0xA1: // AND C
         logInst("AND C");
@@ -698,6 +698,11 @@ export function step(cpu: CPU, bus: Bus): number {
         logInst("PUSH DE");
         push16(make16(cpu.regs.d, cpu.regs.e));
         return 16;
+      case 0xD6: // SUB d8
+        i8 = imm8();
+        logInst(`SUB ${hex8(i8)}`);
+        sub(i8);
+        return 8;
       case 0xD9: // RETI
         logInst("RETI");
         cpu.ime = true;
