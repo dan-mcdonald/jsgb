@@ -458,6 +458,10 @@ export function step(cpu: CPU, bus: Bus): number {
         cpu.regs.a = readb(make16(cpu.regs.h, cpu.regs.l));
         inc16("h", "l");
         return 8;
+      case 0x2B: // DEC HL
+        logInst("DEC HL");
+        dec16("h", "l");
+        return 8;
       case 0x2C: // INC L
         logInst("INC L");
         incR8("l");
