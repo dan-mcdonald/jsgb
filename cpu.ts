@@ -404,6 +404,10 @@ export function step(cpu: CPU, bus: Bus): number {
         logInst("DEC DE");
         dec16("d", "e");
         return 8;
+      case 0x1C: // INC E
+        logInst("INC E");
+        incR8("e");
+        return 4;
       case 0x1D: // DEC E
         logInst("DEC E");
         decR8("e");
