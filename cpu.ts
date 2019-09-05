@@ -333,6 +333,10 @@ export function step(cpu: CPU, bus: Bus): number {
         logInst(`LD BC,${hex16(nn)}`);
         ldR16("b", "c", nn);
         return 12;
+      case 0x03: // INC BC
+        logInst("INC BC");
+        inc16("b", "c");
+        return 8;
       case 0x04: // INC B
         logInst("INC B");
         incR8("b");
