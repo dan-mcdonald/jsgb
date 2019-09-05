@@ -543,6 +543,10 @@ export function step(cpu: CPU, bus: Bus): number {
         logInst("LD B,A");
         cpu.regs.b = cpu.regs.a;
         return 4;
+      case 0x4E: // LD C,(HL)
+        logInst("LD C,(HL)");
+        cpu.regs.c = readb(make16(cpu.regs.h, cpu.regs.l));
+        return 8;
       case 0x4F: // LD C,A
         logInst("LD C,A");
         cpu.regs.c = cpu.regs.a;
