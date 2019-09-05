@@ -539,6 +539,10 @@ export function step(cpu: CPU, bus: Bus): number {
         logInst(`LD A,${hex8(i8)}`);
         cpu.regs.a = i8;
         return 8;
+      case 0x46: // LD B,(HL)
+        logInst("LD B,(HL)");
+        cpu.regs.b = readb(make16(cpu.regs.h, cpu.regs.l));
+        return 8;
       case 0x47: // LD B,A
         logInst("LD B,A");
         cpu.regs.b = cpu.regs.a;
