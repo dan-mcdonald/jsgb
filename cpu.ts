@@ -207,6 +207,15 @@ export function step(cpu: CPU, bus: Bus): number {
     // setH(...);
   };
 
+  const decAddr = function(addr: number): void {
+    const oldVal = readb(addr);
+    const newVal = (oldVal - 1) & 0xff;
+    writeb(addr, newVal);
+    setZ(newVal == 0);
+    setN(true);
+    // TODO setH
+  };
+
   const incR8 = function(reg: keyof Registers): void {
     const newVal = (cpu.regs[reg] + 1) & 0xff;
     cpu.regs[reg] = newVal;
@@ -523,6 +532,10 @@ export function step(cpu: CPU, bus: Bus): number {
       case 0x34: // INC (HL)
         logInst("INC (HL)");
         incAddrHL();
+        return 12;
+      case 0x35: // DEC (HL)
+        logInst("DEC (HL)");
+        decAddr(make16(cpu.regs.h, cpu.regs.l));
         return 12;
       case 0x36: // LD (HL),d8
         i8 = imm8();
