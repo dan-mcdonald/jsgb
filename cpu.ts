@@ -627,6 +627,10 @@ export function step(cpu: CPU, bus: Bus): number {
         logInst("LD A,(HL)");
         cpu.regs.a = readb(make16(cpu.regs.h, cpu.regs.l));
         return 8;
+      case 0x85: // ADD A,L
+        logInst("ADD A,L");
+        add(cpu.regs.l);
+        return 4;
       case 0x86: // ADD A,(HL)
         logInst("ADD A,(HL)");
         add(readb(make16(cpu.regs.h, cpu.regs.l)));
