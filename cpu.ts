@@ -113,6 +113,14 @@ export function step(cpu: CPU, bus: Bus): number {
     return Boolean(cpu.regs.f & maskC);
   };
 
+  const getHL = function(): number {
+    return make16(cpu.regs.h, cpu.regs.l);
+  };
+
+  const setAtHL = function(val: number): void {
+    writeb(getHL(), val);
+  };
+
   const xor = function(reg: keyof Registers): void {
     const res = (cpu.regs.a ^= cpu.regs[reg]);
     setZ(res === 0);
@@ -617,6 +625,10 @@ export function step(cpu: CPU, bus: Bus): number {
         logInst("LD L,A");
         cpu.regs.l = cpu.regs.a;
         return 4;
+      case 0x73: // LD (HL),E
+        logInst("LD (HL),E");
+        setAtHL(cpu.regs.e);
+        return 8;
       case 0x76: // HALT
         logInst("HALT");
         cpu.halt = true;
