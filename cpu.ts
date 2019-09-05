@@ -551,6 +551,11 @@ export function step(cpu: CPU, bus: Bus): number {
           return 12;
         }
         return 8;
+      case 0x3A: // LD A,(HL-)
+        logInst("LD A,(HL-)");
+        cpu.regs.a = readb(make16(cpu.regs.h, cpu.regs.l));
+        dec16("h", "l");
+        return 8;
       case 0x3C: // INC A
         logInst("INC A");
         incR8("a");
