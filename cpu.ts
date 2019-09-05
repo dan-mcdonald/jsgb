@@ -284,6 +284,10 @@ export function step(cpu: CPU, bus: Bus): number {
         logInst("SLA E");
         sla("e");
         return 8;
+      case 0x27: // SLA A
+        logInst("SLA A");
+        sla("a");
+        return 8;
       case 0x37: // SWAP A
         logInst("SWAP A");
         swapR8("a");
