@@ -660,6 +660,11 @@ export function step(cpu: CPU, bus: Bus): number {
         logInst("PUSH BC");
         push16(make16(cpu.regs.b, cpu.regs.c));
         return 16;
+      case 0xC6: // ADD A,d8
+        i8 = imm8();
+        logInst(`ADD A,${hex8(i8)}`);
+        add(i8);
+        return 8;
       case 0xC7: // RST 00H
         logInst("RST 00H");
         call(0x0000);
