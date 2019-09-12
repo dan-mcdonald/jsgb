@@ -2,8 +2,15 @@
 
 <head>
   <title>JSGB</title>
-  <script src="index.js"></script>
-</head>
+  <script src="node_modules/systemjs/dist/system.js"></script>
+  <script src="node_modules/systemjs/dist/extras/named-register.js"></script>
+  <script>
+    System.import('./build/bundle.js')
+      .then(() => System.import("index"))
+      .then(index => index.main())
+      .catch(err => console.error(err));
+  </script>
+  </head>
 
 <body>
   <canvas id="screen" width="160" height="144">

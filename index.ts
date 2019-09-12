@@ -5,6 +5,7 @@ import buildBus from "./buildBus";
 import { ppuTick, ppuBuild } from "./ppu";
 import { audioInit } from "./audio";
 import {cartBuild} from "./cart";
+import {hex16} from "./util";
 
 // http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf
 const initScreen = function(): void {
@@ -48,7 +49,19 @@ const loadCart = async function(): Promise<Uint8Array> {
   return new Uint8Array(buf);
 }
 
-window.onload = async function (): Promise<void> {
+const getScreenContext = function(): CanvasRenderingContext2D {
+  const screenCanvas = <HTMLCanvasElement>document.getElementById("screen");
+  const screenContext = screenCanvas.getContext("2d");
+  if (screenContext === null) {
+    throw new Error("Could not get context");
+  }
+  screenContext.fillStyle = "black";
+  screenContext.font='16px sans-serif';
+  return screenContext;
+}
+
+export async function main (): Promise<void> {
+  console.log("jsgb initializing");
   initScreen();
   const cpu = initCPU();
   const bootRom = await loadBootRom();
@@ -60,10 +73,32 @@ window.onload = async function (): Promise<void> {
 
   // let i = 0;
 
-  while (true) {   // eslint-disable-line
-    let cycles = step(cpu, bus);
-    for (; cycles; cycles--) {
-      ppuTick(ppu, bus);
+  const screenContext = getScreenContext();
+  let cycleCount = 0;
+
+  function frame(ts: DOMHighResTimeStamp) {
+    const targetCycles = ts * 4194.304;
+    while(cycleCount < targetCycles && cpu.pc != 0x0100) {
+      const cycles = step(cpu, bus);
+      cycleCount += cycles;
+      for(let i = 0; i < cycles; i++) {
+        ppuTick(ppu, bus);
+      }
+    }
+    screenContext.clearRect(0, 0, 160, 144);
+    screenContext.fillText(`PC = 0x${hex16(cpu.pc)}`, 10, 100);
+    if (cpu.pc != 0x0100) {
+      window.requestAnimationFrame(frame);
     }
   }
+  window.requestAnimationFrame(frame);
+
+  // console.log("starting execution");
+  // while (cpu.pc !== 0x0100) {
+  //   let cycles = step(cpu, bus);
+  //   for (; cycles; cycles--) {
+  //     ppuTick(ppu, bus);
+  //   }
+  // }
+  // console.log(dump(cpu));
 };
