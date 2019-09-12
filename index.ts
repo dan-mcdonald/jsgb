@@ -50,7 +50,7 @@ const loadCart = async function(): Promise<Uint8Array> {
 }
 
 const getScreenContext = function(): CanvasRenderingContext2D {
-  const screenCanvas = <HTMLCanvasElement>document.getElementById("screen");
+  const screenCanvas = document.getElementById("screen") as HTMLCanvasElement;
   const screenContext = screenCanvas.getContext("2d");
   if (screenContext === null) {
     throw new Error("Could not get context");
@@ -101,4 +101,4 @@ export async function main (): Promise<void> {
   //   }
   // }
   // console.log(dump(cpu));
-};
+}
