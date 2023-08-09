@@ -1,21 +1,27 @@
-'use strict';
+const path = require('path');
 
 module.exports = {
   mode: 'development',
-  devtool: 'inline-source-map',
-  entry: './index.ts',
+  entry: './src/index.ts',
   module: {
     rules: [
       {
         test: /\.tsx?$/,
-        loader: 'ts-loader'
-      }
-    ]
+        use: 'ts-loader',
+        exclude: /node_modules/,
+      },
+    ],
   },
   resolve: {
-    extensions: ['.ts', '.tsx', '.js']
+    extensions: ['.tsx', '.ts', '.js'],
   },
   output: {
-    filename: 'index.js'
+    filename: 'bundle.js',
+    path: path.resolve(__dirname, 'dist'),
+  },
+  devServer: {
+    static: {
+      directory: path.join(__dirname, 'dist'),
+    }
   }
 };

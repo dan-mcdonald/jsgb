@@ -869,6 +869,7 @@ export function step(cpu: CPU, bus: Bus): number {
         throw new Error(`unknown opcode ${hex8(inst)}`);
     }
   } catch(err) {
-    throw new Error(`Error while executing instruction at at ${hex16(instAddr)}\n${err}\n${err.stack}`);
+    const stack = (err instanceof Error) ? err.stack : "";
+    throw new Error(`Error while executing instruction at at ${hex16(instAddr)}\n${err}\n${stack}`);
   }
 }

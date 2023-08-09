@@ -1,4 +1,5 @@
+/* eslint-env node */
 require("./polyfetch");
 global.window = {};
 require("./index");
-window.onload();
+global.window.onload();

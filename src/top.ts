@@ -44,7 +44,7 @@ const loadBootRom = async function(): Promise<Uint8Array> {
 };
 
 const loadCart = async function(): Promise<Uint8Array> {
-  const resp = await fetch("zelda-link-awakening.gb");
+  const resp = await fetch("game.gb");
   const buf = await resp.arrayBuffer();
   return new Uint8Array(buf);
 }
@@ -102,3 +102,4 @@ export async function main (): Promise<void> {
   // }
   // console.log(dump(cpu));
 }
+

@@ -1,3 +1,5 @@
 node_modules/
 build/
 .yarn/
+dist/game.gb
+dist/DMG_ROM.bin
