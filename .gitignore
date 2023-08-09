@@ -3,3 +3,4 @@ build/
 .yarn/
 dist/game.gb
 dist/DMG_ROM.bin
+dist/bundle.js
