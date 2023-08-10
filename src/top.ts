@@ -1,6 +1,6 @@
 "use strict";
 
-import {initCPU, step, dump} from "./cpu";
+import {initCPU, step} from "./cpu";
 import buildBus from "./buildBus";
 import { ppuTick, ppuBuild } from "./ppu";
 import { audioInit } from "./audio";

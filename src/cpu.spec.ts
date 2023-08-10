@@ -3,8 +3,8 @@ import { expect } from 'chai';
 import { BusRead, BusWrite } from "./bus";
 
 describe("dec b", (): void => {
-  const readb: BusRead = (addr: number): number => 0x05;
-  const writeb: BusWrite = (addr: number, val: number): void => {};
+  const readb: BusRead = (_: number): number => 0x05;
+  const writeb: BusWrite = (_: number, __: number): void => {};
   const bus = {readb, writeb};
 
   it("decrements 4 to 3", () => {
@@ -47,7 +47,7 @@ describe("dec b", (): void => {
 
 describe("swap a", (): void => {
   const readb = (addr: number): number => [0xcb, 0x37][addr];
-  const writeb = (addr: number, val: number): void => {};
+  const writeb = (_: number, __: number): void => {};
   const bus = {readb, writeb};
 
   it("swaps a5 -> 5a", () => {

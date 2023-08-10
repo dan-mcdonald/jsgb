@@ -79,9 +79,9 @@ export function step(cpu: CPU, bus: Bus): number {
   };
 
   const logInst = function(inst: string): void {
-    // if (cpu.pc < 0x0027) return;
-    // console.log(dump(cpu));
-    // console.log(`${hex16(instAddr)} ${inst}`);
+    if (cpu.pc < 0x0027) return;
+    console.log(dump(cpu));
+    console.log(`${hex16(instAddr)} ${inst}`);
   };
 
   const setZ = function(b: boolean): void {
@@ -94,14 +94,15 @@ export function step(cpu: CPU, bus: Bus): number {
   const setN = function(b: boolean): void {
     cpu.regs.f = (cpu.regs.f & ~maskN) | (b ? maskN : 0);
   };
-  const getN = function(): boolean {
+
+  const getN = function(): boolean { // eslint-disable-line @typescript-eslint/no-unused-vars
     return Boolean(cpu.regs.f & maskN);
   };
   
   const setH = function(b: boolean): void {
     cpu.regs.f = (cpu.regs.f & ~maskH) | (b ? maskH : 0);
   };
-  const getH = function(): boolean {
+  const getH = function(): boolean { // eslint-disable-line @typescript-eslint/no-unused-vars
     return Boolean(cpu.regs.f & maskH);
   };
 
