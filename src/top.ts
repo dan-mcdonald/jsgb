@@ -1,11 +1,14 @@
 "use strict";
 
+import type {CPU} from "./cpu";
+import type {Bus} from "./bus";
+
 import {initCPU, step} from "./cpu";
 import buildBus from "./buildBus";
 import { ppuTick, ppuBuild } from "./ppu";
 import { audioInit } from "./audio";
 import {cartBuild} from "./cart";
-import {hex16} from "./util";
+import {hex8, hex16} from "./util";
 
 // http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf
 const initScreen = function(): void {
@@ -60,6 +63,33 @@ const getScreenContext = function(): CanvasRenderingContext2D {
   return screenContext;
 }
 
+const updateDebugInfo = function(cpu: CPU, bus: Bus, cycleCount: Number): void {
+  const debugDiv = window.document.getElementById("debug");
+  debugDiv.innerHTML = `PC = 0x${hex16(cpu.pc)}<br/>` +
+    `SP = 0x${hex16(cpu.regs.sp)}<br/>` +
+    `A = 0x${hex8(cpu.regs.a)}<br/>` +
+    `F = 0x${hex8(cpu.regs.f)}<br/>` +
+    `B = 0x${hex8(cpu.regs.b)}<br/>` +
+    `C = 0x${hex8(cpu.regs.c)}<br/>` +
+    `D = 0x${hex8(cpu.regs.d)}<br/>` +
+    `E = 0x${hex8(cpu.regs.e)}<br/>` +
+    `H = 0x${hex8(cpu.regs.h)}<br/>` +
+    `L = 0x${hex8(cpu.regs.l)}<br/>` +
+    `cycle = ${cycleCount}<br/>` +
+    "";
+    // `LCDC = 0x${hex16(bus.read(0xff40))}<br/>` +
+    // `STAT = 0x${hex16(bus.read(0xff41))}<br/>` +
+    // `LY = 0x${hex16(bus.read(0xff44))}<br/>` +
+    // `LYC = 0x${hex16(bus.read(0xff45))}<br/>` +
+    // `SCX = 0x${hex16(bus.read(0xff43))}<br/>` +
+    // `SCY = 0x${hex16(bus.read(0xff42))}<br/>` +
+    // `WY = 0x${hex16(bus.read(0xff4a))}<br/>` +
+    // `WX = 0x${hex16(bus.read(0xff4b))}<br/>` +
+    // `IE = 0x${hex16(bus.read(0xffff))}<br/>` +
+    // `IF = 0x${hex16(bus.read(0xff0f))}<br/>` +
+
+}
+
 export async function main (): Promise<void> {
   console.log("jsgb initializing");
   initScreen();
@@ -78,6 +108,7 @@ export async function main (): Promise<void> {
 
   function frame(ts: DOMHighResTimeStamp) {
     const targetCycles = ts * 4194.304;
+    // const targetCycles = cycleCount + 10000;
     while(cycleCount < targetCycles && cpu.pc != 0x0100) {
       const cycles = step(cpu, bus);
       cycleCount += cycles;
@@ -86,7 +117,8 @@ export async function main (): Promise<void> {
       }
     }
     screenContext.clearRect(0, 0, 160, 144);
-    screenContext.fillText(`PC = 0x${hex16(cpu.pc)}`, 10, 100);
+    // screenContext.fillText(`PC = 0x${hex16(cpu.pc)}`, 10, 100);
+    updateDebugInfo(cpu, bus, cycleCount);
     if (cpu.pc != 0x0100) {
       window.requestAnimationFrame(frame);
     }

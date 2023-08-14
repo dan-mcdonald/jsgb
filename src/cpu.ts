@@ -14,7 +14,7 @@ interface Registers {
   l: number;
 }
 
-interface CPU {
+export interface CPU {
 	pc: number;
   ime: boolean;
   halt: boolean;
@@ -80,8 +80,8 @@ export function step(cpu: CPU, bus: Bus): number {
 
   const logInst = function(inst: string): void {
     if (cpu.pc < 0x0027) return;
-    console.log(dump(cpu));
-    console.log(`${hex16(instAddr)} ${inst}`);
+    // console.log(dump(cpu));
+    // console.log(`${hex16(instAddr)} ${inst}`);
   };
 
   const setZ = function(b: boolean): void {
