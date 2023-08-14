@@ -5,12 +5,13 @@ import type {Bus} from "./bus";
 
 import {initCPU, step} from "./cpu";
 import buildBus from "./buildBus";
-import { ppuTick, ppuBuild } from "./ppu";
+import { ppuTick, ppuBuild, renderScreen } from "./ppu";
 import { audioInit } from "./audio";
 import {cartBuild} from "./cart";
 import {hex8, hex16} from "./util";
 
 // http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf
+// https://gbdev.io/pandocs/
 const initScreen = function(): void {
   // const screenCanvas = <HTMLCanvasElement>document.getElementById("screen");
   // const screenWidth = screenCanvas.width;
@@ -116,7 +117,7 @@ export async function main (): Promise<void> {
         ppuTick(ppu, bus);
       }
     }
-    screenContext.clearRect(0, 0, 160, 144);
+    renderScreen(screenContext, ppu);
     // screenContext.fillText(`PC = 0x${hex16(cpu.pc)}`, 10, 100);
     updateDebugInfo(cpu, bus, cycleCount);
     if (cpu.pc != 0x0100) {

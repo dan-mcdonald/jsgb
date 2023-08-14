@@ -137,3 +137,24 @@ export function ppuTick(ppu: PPU, bus: Bus): void {
 
   setLYCoincidence(ppu, getLine(ppu) === getLYCompare(ppu));
 }
+
+function renderBackground(imageData: ImageData, ppu: PPU): void {
+}
+
+function renderWindow(imageData: ImageData, ppu: PPU): void {
+}
+
+function renderBgSprites(imageData: ImageData, ppu: PPU): void {
+}
+
+function renderFgSprites(imageData: ImageData, ppu: PPU): void {
+}
+
+export function renderScreen(screenContext: CanvasRenderingContext2D, ppu: PPU): void {
+  const imageData = screenContext.createImageData(160, 144);
+  renderBgSprites(imageData, ppu);
+  renderBackground(imageData, ppu);
+  renderWindow(imageData, ppu);
+  renderFgSprites(imageData, ppu);
+  screenContext.putImageData(imageData, 0, 0);
+}
