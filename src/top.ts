@@ -63,7 +63,7 @@ const getScreenContext = function(): CanvasRenderingContext2D {
   return screenContext;
 }
 
-const updateDebugInfo = function(cpu: CPU, bus: Bus, cycleCount: Number): void {
+const updateDebugInfo = function(cpu: CPU, bus: Bus, cycleCount: number): void {
   const debugDiv = window.document.getElementById("debug");
   debugDiv.innerHTML = `PC = 0x${hex16(cpu.pc)}<br/>` +
     `SP = 0x${hex16(cpu.regs.sp)}<br/>` +

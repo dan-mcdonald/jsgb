@@ -78,10 +78,9 @@ export function step(cpu: CPU, bus: Bus): number {
     return make16(hi, lo);
   };
 
-  const logInst = function(inst: string): void {
-    if (cpu.pc < 0x0027) return;
-    // console.log(dump(cpu));
-    // console.log(`${hex16(instAddr)} ${inst}`);
+  const logInst = function(_: string): void {
+    // WIP I used to want write all instructions to the console for debugging.
+    // Now I want to programmatically disassemble so I'll need to refactor things
   };
 
   const setZ = function(b: boolean): void {
