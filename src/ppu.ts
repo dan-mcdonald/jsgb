@@ -3,6 +3,7 @@ import {hex8} from "./util";
 import {Interrupt, setInterrupt} from "./interrupt";
 
 import type {CanvasRenderingContext2D as NodeCanvasRenderingContext2D} from "canvas";
+import type {ImageData as NodeImageData} from "canvas";
 
 // Gameboy pocket palette
 // 0 #B0B593 white
@@ -33,7 +34,7 @@ export const screenPalette: Palette = {
   3: makeColor("#161616"),
 };
 
-export function makeTileImage(canvasCtx: CanvasRenderingContext2D | NodeCanvasRenderingContext2D, _: Uint8Array, __: number, ___: Palette): ImageData {
+export function makeTileImage(canvasCtx: CanvasRenderingContext2D | NodeCanvasRenderingContext2D, _: Uint8Array, __: number, ___: Palette): ImageData | NodeImageData {
   const image = canvasCtx.createImageData(8, 8);
   return image;
 }
