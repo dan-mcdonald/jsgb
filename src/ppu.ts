@@ -2,6 +2,30 @@ import {Bus} from "./bus";
 import {hex8} from "./util";
 import {Interrupt, setInterrupt} from "./interrupt";
 
+// Gameboy pocket palette
+// 0 #B0B593 white
+// 1 #B1B694 light gray
+// 2 #454C35 dark gray
+// 3 #161616 black
+
+type Color = Uint8Array;
+
+export function makeColor(hexColor: string): Color {
+  const color: Color = new Uint8Array(4);
+  color[0] = parseInt(hexColor.slice(1, 3), 16);
+  color[1] = parseInt(hexColor.slice(3, 5), 16);
+  color[2] = parseInt(hexColor.slice(5, 7), 16);
+  color[3] = 0xFF;
+  return color;
+}
+
+const palettePocket: Color[] = [
+  makeColor("#B0B593"),
+  makeColor("#B1B694"),
+  makeColor("#454C35"),
+  makeColor("#161616"),
+];
+
 enum Register {
   LCDC = 0x0,
   STAT = 0x1,
