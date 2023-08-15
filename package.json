@@ -4,7 +4,9 @@
   "description": "",
   "main": "node.js",
   "scripts": {
-    "test": "eslint src && mocha -r ts-node/register src/*.spec.ts",
+    "lint": "eslint src",
+    "test": "mocha -r ts-node/register src/*.spec.ts",
+    "test:watch": "mocha -r ts-node/register --watch --watch-files \"src/*.ts\" \"src/*.spec.ts\"",
     "build": "webpack",
     "dev": "webpack serve --open",
     "exec": "npx ts-node node.js"

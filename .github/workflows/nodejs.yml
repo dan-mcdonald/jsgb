@@ -9,18 +9,35 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [20.x]
+        node-version: [current, lts]
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v3
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
-    - name: npm install, build, and test
-      run: |
-        yarn install
-        yarn test
-        yarn build
-      env:
+    - name: yarn install
+      uses: borales/actions-yarn@v4
+      with:
+        cmd: install
+      env: 
+        CI: true
+    - name: yarn lint
+      uses: borales/actions-yarn@v4
+      with:
+        cmd: lint
+      env: 
+        CI: true
+    - name: yarn test
+      uses: borales/actions-yarn@v4
+      with:
+        cmd: test
+      env: 
+        CI: true
+    - name: yarn build
+      uses: borales/actions-yarn@v4
+      with:
+        cmd: build
+      env: 
         CI: true
