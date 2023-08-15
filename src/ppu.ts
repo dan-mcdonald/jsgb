@@ -2,29 +2,41 @@ import {Bus} from "./bus";
 import {hex8} from "./util";
 import {Interrupt, setInterrupt} from "./interrupt";
 
+import type {CanvasRenderingContext2D as NodeCanvasRenderingContext2D} from "canvas";
+
 // Gameboy pocket palette
 // 0 #B0B593 white
 // 1 #B1B694 light gray
 // 2 #454C35 dark gray
 // 3 #161616 black
 
-type Color = Uint8Array;
+interface Color {bytes: Uint8Array}
+interface Palette {0: Color, 1: Color, 2: Color, 3: Color}
+
+export function Color(bytes: Uint8Array): Color {
+  return {bytes};
+}
 
 export function makeColor(hexColor: string): Color {
-  const color: Color = new Uint8Array(4);
+  const color = new Uint8Array(4);
   color[0] = parseInt(hexColor.slice(1, 3), 16);
   color[1] = parseInt(hexColor.slice(3, 5), 16);
   color[2] = parseInt(hexColor.slice(5, 7), 16);
   color[3] = 0xFF;
-  return color;
+  return Color(color);
 }
 
-const palettePocket: Color[] = [
-  makeColor("#B0B593"),
-  makeColor("#B1B694"),
-  makeColor("#454C35"),
-  makeColor("#161616"),
-];
+export const screenPalette: Palette = {
+  0: makeColor("#B0B593"),
+  1: makeColor("#B1B694"),
+  2: makeColor("#454C35"),
+  3: makeColor("#161616"),
+};
+
+export function makeTileImage(canvasCtx: CanvasRenderingContext2D | NodeCanvasRenderingContext2D, _: Uint8Array, __: number, ___: Palette): ImageData {
+  const image = canvasCtx.createImageData(8, 8);
+  return image;
+}
 
 enum Register {
   LCDC = 0x0,
@@ -162,23 +174,23 @@ export function ppuTick(ppu: PPU, bus: Bus): void {
   setLYCoincidence(ppu, getLine(ppu) === getLYCompare(ppu));
 }
 
-function renderBackground(imageData: ImageData, ppu: PPU): void {
-}
+// function renderBackground(imageData: ImageData, ppu: PPU): void {
+// }
 
-function renderWindow(imageData: ImageData, ppu: PPU): void {
-}
+// function renderWindow(imageData: ImageData, ppu: PPU): void {
+// }
 
-function renderBgSprites(imageData: ImageData, ppu: PPU): void {
-}
+// function renderBgSprites(imageData: ImageData, ppu: PPU): void {
+// }
 
-function renderFgSprites(imageData: ImageData, ppu: PPU): void {
-}
+// function renderFgSprites(imageData: ImageData, ppu: PPU): void {
+// }
 
-export function renderScreen(screenContext: CanvasRenderingContext2D, ppu: PPU): void {
+export function renderScreen(screenContext: CanvasRenderingContext2D, _: PPU): void {
   const imageData = screenContext.createImageData(160, 144);
-  renderBgSprites(imageData, ppu);
-  renderBackground(imageData, ppu);
-  renderWindow(imageData, ppu);
-  renderFgSprites(imageData, ppu);
+  // renderBgSprites(imageData, ppu);
+  // renderBackground(imageData, ppu);
+  // renderWindow(imageData, ppu);
+  // renderFgSprites(imageData, ppu);
   screenContext.putImageData(imageData, 0, 0);
 }
