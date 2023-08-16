@@ -17,27 +17,7 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
-    - name: yarn install
-      uses: borales/actions-yarn@v4
-      with:
-        cmd: install
-      env: 
-        CI: true
-    - name: yarn lint
-      uses: borales/actions-yarn@v4
-      with:
-        cmd: lint
-      env: 
-        CI: true
-    - name: yarn test
-      uses: borales/actions-yarn@v4
-      with:
-        cmd: test
-      env: 
-        CI: true
-    - name: yarn build
-      uses: borales/actions-yarn@v4
-      with:
-        cmd: build
-      env: 
-        CI: true
+    - run: yarn install
+    - run: yarn run lint
+    - run: yarn run test
+    - run: yarn run build
