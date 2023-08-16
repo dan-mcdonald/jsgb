@@ -2,11 +2,13 @@
   "compilerOptions": {
     "target": "es2022",
     "module": "es2022",
+    "moduleResolution": "NodeNext",
   },
   "ts-node": {
     "esm": true,
     "compilerOptions": {
       "module": "nodenext",
-    }
+    },
+
   }
 }
