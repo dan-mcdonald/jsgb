@@ -1,6 +1,6 @@
-import {initCPU, step, maskZ} from "./cpu";
+import {initCPU, step, maskZ} from "../src/cpu";
 import { expect } from 'chai';
-import { BusRead, BusWrite } from "./bus";
+import { BusRead, BusWrite } from "../src/bus";
 
 describe("dec b", (): void => {
   const readb: BusRead = (_: number): number => 0x05;

@@ -5,14 +5,8 @@ import {Interrupt, setInterrupt} from "./interrupt";
 import type {CanvasRenderingContext2D as NodeCanvasRenderingContext2D} from "canvas";
 import type {ImageData as NodeImageData} from "canvas";
 
-// Gameboy pocket palette
-// 0 #B0B593 white
-// 1 #B1B694 light gray
-// 2 #454C35 dark gray
-// 3 #161616 black
-
 interface Color {bytes: Uint8Array}
-interface Palette {0: Color, 1: Color, 2: Color, 3: Color}
+export interface Palette {0: Color, 1: Color, 2: Color, 3: Color}
 
 export function Color(bytes: Uint8Array): Color {
   return {bytes};
@@ -27,11 +21,12 @@ export function makeColor(hexColor: string): Color {
   return Color(color);
 }
 
+// High-contrast screen palette
 export const screenPalette: Palette = {
-  0: makeColor("#B0B593"),
-  1: makeColor("#B1B694"),
-  2: makeColor("#454C35"),
-  3: makeColor("#161616"),
+  0: makeColor("#FFFFFF"),
+  1: makeColor("#A5A5A5"),
+  2: makeColor("#525252"),
+  3: makeColor("#000000"),
 };
 
 export function makeTileImage(canvasCtx: CanvasRenderingContext2D | NodeCanvasRenderingContext2D, _: Uint8Array, __: number, ___: Palette): ImageData | NodeImageData {

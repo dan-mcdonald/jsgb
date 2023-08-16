@@ -5,8 +5,8 @@
   "main": "node.js",
   "scripts": {
     "lint": "DEBUG=eslint:cli-engine eslint src",
-    "test": "mocha -r ts-node/register src/*.spec.ts",
-    "test:watch": "mocha -r ts-node/register --watch --watch-files \"src/*.ts\" \"src/*.spec.ts\"",
+    "test": "mocha",
+    "test:watch": "mocha --watch",
     "build": "webpack",
     "dev": "webpack serve --open",
     "exec": "npx ts-node node.js"
