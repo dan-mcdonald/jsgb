@@ -870,6 +870,6 @@ export function step(cpu: CPU, bus: Bus): number {
     }
   } catch(err) {
     const stack = (err instanceof Error) ? err.stack : "";
-    throw new Error(`Error while executing instruction at at ${hex16(instAddr)}\n${err}\n${stack}`);
+    throw new Error(`Error while executing instruction at at ${hex16(instAddr)}\n${String(err)}\n${stack}`);
   }
 }
