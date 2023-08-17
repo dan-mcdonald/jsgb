@@ -66,6 +66,9 @@ const getScreenContext = function(): CanvasRenderingContext2D {
 
 const updateDebugInfo = function(cpu: CPU, bus: Bus, cycleCount: number): void {
   const debugDiv = window.document.getElementById("debug");
+  if (debugDiv === null) {
+    throw new Error("debug div missing");
+  }
   debugDiv.innerHTML = `PC = 0x${hex16(cpu.pc)}<br/>` +
     `SP = 0x${hex16(cpu.regs.sp)}<br/>` +
     `A = 0x${hex8(cpu.regs.a)}<br/>` +
