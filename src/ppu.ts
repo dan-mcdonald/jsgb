@@ -1,15 +1,15 @@
-import {Bus} from "./bus";
-import {hex8} from "./util";
-import {Interrupt, setInterrupt} from "./interrupt";
+import { Bus } from "./bus";
+import { hex8 } from "./util";
+import { Interrupt, setInterrupt } from "./interrupt";
 
-import type {CanvasRenderingContext2D as NodeCanvasRenderingContext2D} from "canvas";
-import type {ImageData as NodeImageData} from "canvas";
+import type { CanvasRenderingContext2D as NodeCanvasRenderingContext2D } from "canvas";
+import type { ImageData as NodeImageData } from "canvas";
 
-interface Color {bytes: Uint8Array}
-export interface Palette {0: Color, 1: Color, 2: Color, 3: Color}
+interface Color { bytes: Uint8Array }
+export interface Palette { 0: Color, 1: Color, 2: Color, 3: Color }
 
 export function Color(bytes: Uint8Array): Color {
-  return {bytes};
+  return { bytes };
 }
 
 export function makeColor(hexColor: string): Color {
@@ -29,8 +29,73 @@ export const screenPalette: Palette = {
   3: makeColor("#000000"),
 };
 
-export function makeTileImage(canvasCtx: CanvasRenderingContext2D | NodeCanvasRenderingContext2D, _: Uint8Array, __: number, ___: Palette): ImageData | NodeImageData {
+export function colorForPaletteIndexBg(screen: Palette, palette: number, index: number): Color {
+  return screen[(palette >> (index * 2)) & 0x03];
+}
+
+export function colorForPaletteIndexObj(screen: Palette, palette: number, index: number): Color {
+  if (index === 0) {
+    return Color(Uint8Array.from([0, 0, 0, 0]));
+  }
+  return colorForPaletteIndexBg(screen, palette, index);
+}
+
+export function makeTilePaletteRow(byte1: number, byte2: number): Uint8ClampedArray {
+  const row = new Uint8ClampedArray(8);
+  for (let i = 0; i < 8; i++) {
+    // byte2 holds the high bits of the color, byte1 holds the low bits
+    const highBit = (byte2 >> (7 - i)) & 0x01;
+    const lowBit = (byte1 >> (7 - i)) & 0x01;
+    row[i] = (highBit << 1) | lowBit;
+  }
+  return row;
+}
+
+export interface TileData {
+  tileData: Uint8ClampedArray;
+}
+
+export function TileData(tileData: Uint8ClampedArray): TileData {
+  if (tileData.length !== 16) {
+    throw new Error(`Invalid tile data length ${tileData.length}`);
+  }
+  return { tileData };
+}
+
+export interface TilePaletteData {
+  tilePaletteData: Uint8ClampedArray;
+}
+
+export function TilePaletteData(tilePaletteData: Uint8ClampedArray): TilePaletteData {
+  if (tilePaletteData.length !== 64) {
+    throw new Error(`Invalid tile data length ${tilePaletteData.length}`);
+  }
+  return { tilePaletteData };
+}
+
+export function makeTilePaletteImage(tile: TileData): TilePaletteData {
+  const tileData = tile.tileData;
+  const image = new Uint8ClampedArray(8 * 8);
+  for (let i = 0; i < 8; i++) {
+    const row = makeTilePaletteRow(tileData[i * 2], tileData[i * 2 + 1]);
+    image.set(row, i * 8);
+  }
+  return TilePaletteData(image);
+}
+
+export function makeBgTileImage(
+  canvasCtx: CanvasRenderingContext2D | NodeCanvasRenderingContext2D,
+  tilePalette: TilePaletteData,
+  palette: number, screenPalette: Palette): ImageData | NodeImageData {
   const image = canvasCtx.createImageData(8, 8);
+  const tilePaletteData = tilePalette.tilePaletteData;
+  for (let i = 0; i < 8 * 8; i++) {
+    const color = colorForPaletteIndexBg(screenPalette, palette, tilePaletteData[i]);
+    image.data[i * 4 + 0] = color.bytes[0];
+    image.data[i * 4 + 1] = color.bytes[1];
+    image.data[i * 4 + 2] = color.bytes[2];
+    image.data[i * 4 + 3] = color.bytes[3];
+  }
   return image;
 }
 
@@ -91,8 +156,8 @@ function setLine(ppu: PPU, line: number): void {
 }
 
 function getDMASrcAddr(ppu: PPU): number | null {
-  const regVal = ppu.ioRegs[Register.DMA]; 
-  if(regVal == 0) {
+  const regVal = ppu.ioRegs[Register.DMA];
+  if (regVal == 0) {
     return null;
   }
   if (regVal >= 0x00 && regVal <= 0xF1) {
@@ -108,7 +173,7 @@ function clearDMA(ppu: PPU): void {
 const statLYCFlagMask = 0x04;
 
 function setLYCoincidence(ppu: PPU, val: boolean): void {
-  if(val) {
+  if (val) {
     ppu.ioRegs[Register.STAT] |= statLYCFlagMask;
   } else {
     ppu.ioRegs[Register.STAT] &= ~statLYCFlagMask;
@@ -121,16 +186,16 @@ function getLYCompare(ppu: PPU): number {
 
 export function ppuTick(ppu: PPU, bus: Bus): void {
   ppu.lineDot++;
-  
+
   const dmaSrcAddr = getDMASrcAddr(ppu);
   if (dmaSrcAddr != null) {
-    for(let i = 0; i < ppu.oam.length; i++) {
+    for (let i = 0; i < ppu.oam.length; i++) {
       ppu.oam[i] = bus.readb(dmaSrcAddr + i);
     }
     clearDMA(ppu);
   }
 
-  switch(getMode(ppu)) {
+  switch (getMode(ppu)) {
     case Mode.ZERO:
       if (ppu.lineDot === 456) {
         ppu.lineDot = 0;
