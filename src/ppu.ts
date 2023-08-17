@@ -6,7 +6,11 @@ import type { CanvasRenderingContext2D as NodeCanvasRenderingContext2D } from "c
 import type { ImageData as NodeImageData } from "canvas";
 
 interface Color { bytes: Uint8Array }
-export interface Palette { 0: Color, 1: Color, 2: Color, 3: Color }
+export type Palette = Color[];
+
+export function Palette(white: Color, lightGray: Color, darkGray: Color, black: Color): Palette {
+  return [white, lightGray, darkGray, black];
+}
 
 export function Color(bytes: Uint8Array): Color {
   return { bytes };
@@ -22,12 +26,12 @@ export function makeColor(hexColor: string): Color {
 }
 
 // High-contrast screen palette
-export const screenPalette: Palette = {
-  0: makeColor("#FFFFFF"),
-  1: makeColor("#A5A5A5"),
-  2: makeColor("#525252"),
-  3: makeColor("#000000"),
-};
+export const screenPalette = Palette(
+  makeColor("#FFFFFF"),
+  makeColor("#A5A5A5"),
+  makeColor("#525252"),
+  makeColor("#000000"),
+);
 
 export function colorForPaletteIndexBg(screen: Palette, palette: number, index: number): Color {
   return screen[(palette >> (index * 2)) & 0x03];

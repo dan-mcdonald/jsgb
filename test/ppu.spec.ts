@@ -17,12 +17,12 @@ describe("ppu", (): void => {
   const canvasCtx = canvas.getContext("2d");
 
   // High-contrast screen palette
-  const screenPalette: Palette = {
-    0: makeColor("#FFFFFF"),
-    1: makeColor("#A5A5A5"),
-    2: makeColor("#525252"),
-    3: makeColor("#000000"),
-  };
+  const screenPalette = Palette(
+    makeColor("#FFFFFF"),
+    makeColor("#A5A5A5"),
+    makeColor("#525252"),
+    makeColor("#000000"),
+  );
 
   it("makeColor", (): void => {
     const expected = Color(Uint8Array.from([0x12, 0x34, 0x56, 0xff]));
