@@ -1,9 +1,12 @@
 import { expect } from 'chai';
 import { Color, Palette, makeColor, colorForPaletteIndexBg, colorForPaletteIndexObj, makeTilePaletteImage, makeTilePaletteRow, makeBgTileImage, TileData, TilePaletteData } from '../src/ppu';
-import { createCanvas, loadImage } from 'canvas';
+import { createCanvas, loadImage, ImageData } from 'canvas';
 import type { ImageData as NodeImageData, Image as NodeImage } from 'canvas';
 import { pipeline } from 'node:stream/promises';
 import { createWriteStream } from 'node:fs';
+
+// use canvas to polyfill ImageData when running tests in node
+(global as { [key: string]: any })["ImageData"] = ImageData; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 function imageToData(image: NodeImage): NodeImageData {
   const canvas = createCanvas(image.width, image.height);
@@ -90,7 +93,7 @@ describe("ppu", (): void => {
 
   it("makeBgTileImage", async (): Promise<void> => {
     const tilePaletteData = makeTilePaletteImage(tileDataGb);
-    const actual = makeBgTileImage(canvasCtx, tilePaletteData, paletteNormal, screenPalette);
+    const actual = makeBgTileImage(tilePaletteData, paletteNormal, screenPalette);
     canvasCtx.putImageData(actual, 0, 0);
     const out = createWriteStream("./dist/gb-test-tile1.png");
     await pipeline(canvas.createPNGStream(), out);

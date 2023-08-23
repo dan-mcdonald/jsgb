@@ -1,8 +1,8 @@
+/// <reference lib="dom" />
 import { Bus } from "./bus";
 import { hex8 } from "./util";
 import { Interrupt, setInterrupt } from "./interrupt";
 
-import type { CanvasRenderingContext2D as NodeCanvasRenderingContext2D } from "canvas";
 import type { ImageData as NodeImageData } from "canvas";
 
 interface Color { bytes: Uint8Array }
@@ -88,10 +88,9 @@ export function makeTilePaletteImage(tile: TileData): TilePaletteData {
 }
 
 export function makeBgTileImage(
-  canvasCtx: CanvasRenderingContext2D | NodeCanvasRenderingContext2D,
   tilePalette: TilePaletteData,
   palette: number, screenPalette: Palette): ImageData | NodeImageData {
-  const image = canvasCtx.createImageData(8, 8);
+  const image = new ImageData(8, 8);
   const tilePaletteData = tilePalette.tilePaletteData;
   for (let i = 0; i < 8 * 8; i++) {
     const color = colorForPaletteIndexBg(screenPalette, palette, tilePaletteData[i]);
