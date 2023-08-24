@@ -250,6 +250,10 @@ export function ppuTick(ppu: PPU, bus: Bus): void {
 // function renderFgSprites(imageData: ImageData, ppu: PPU): void {
 // }
 
+export function getBgTileIndex(x: number, y: number): number {
+  return (y * 32) + x;
+}
+
 export function renderScreen(screenContext: CanvasRenderingContext2D, _: PPU): void {
   const imageData = screenContext.createImageData(160, 144);
   // renderBgSprites(imageData, ppu);
