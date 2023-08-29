@@ -1,3 +1,5 @@
+const encoder = new TextEncoder();
+
 function arrayEqual(a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) {
     return false;
@@ -28,7 +30,22 @@ export function load(contents: Uint8Array): BESSFile {
   if (!detect(contents)) {
     throw new Error("Not a BESS file");
   }
-  const vram = contents.slice(0, 0x4000);
+  let pos = headerOffset(contents);
+  let done = false;
+  let vram = new Uint8Array(0);
+  while (!done) {
+    const blockTag = contents.slice(pos, pos + 4);
+    const blockLength = asLEInt(contents.slice(pos + 4, pos + 8));
+    pos += 8;
+    if (arrayEqual(blockTag, encoder.encode("END "))) {
+      done = true;
+    } else if (arrayEqual(blockTag, encoder.encode("CORE"))) {
+      const vramSize = asLEInt(contents.slice(pos + 0xA0, pos + 0xA0 + 4));
+      const vramOffset = asLEInt(contents.slice(pos + 0xA0, pos + 0xA0 + 4));
+      vram = contents.slice(vramOffset, vramOffset + vramSize);
+    }
+    pos += blockLength;
+  }
   return {vram};
 }
 

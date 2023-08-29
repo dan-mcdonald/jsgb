@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { detect, headerOffset } from "../src/bess";
+import { detect, headerOffset, load } from "../src/bess";
 import { readFile } from "node:fs/promises"
 
 describe("bess", (): void => {
@@ -21,5 +21,12 @@ describe("bess", (): void => {
   it("headerOffset", async (): Promise<void> => {
     const bootend = await readFile("test/fixtures/bootend.sna");
     expect(headerOffset(bootend)).to.equal(0x0000665f);
+  });
+
+  it("load", async (): Promise<void> => {
+    const bootend = await readFile("test/fixtures/bootend.sna");
+    const { vram } = load(bootend);
+    expect(vram.length).to.equal(0x2000);
+    expect(vram[0x992D-0x8000]).to.equal(0x16);
   });
 });
