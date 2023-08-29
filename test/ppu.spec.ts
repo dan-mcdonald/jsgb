@@ -1,5 +1,6 @@
 import { expect } from 'chai';
-import { Color, Palette, makeColor, colorForPaletteIndexBg, colorForPaletteIndexObj, makeTilePaletteImage, makeTilePaletteRow, makeBgTileImage, TileData, TilePaletteData, getBgTileIndex, ppuBuild } from '../src/ppu';
+import { Color, Palette, makeColor, colorForPaletteIndexBg, colorForPaletteIndexObj, makeTilePaletteImage, makeTilePaletteRow, makeBgTileImage, TileData, TilePaletteData, getBgTileIndex, ppuBuild, makeBgImage } from '../src/ppu';
+import type { PPU } from '../src/ppu';
 import { createCanvas, loadImage, ImageData } from 'canvas';
 import type { ImageData as NodeImageData, Image as NodeImage } from 'canvas';
 import { pipeline } from 'node:stream/promises';
@@ -15,10 +16,13 @@ function imageToData(image: NodeImage): NodeImageData {
   return canvasCtx.getImageData(0, 0, image.width, image.height);
 }
 
-describe("ppu", (): void => {
-  const canvas = createCanvas(160, 144);
-  const canvasCtx = canvas.getContext("2d");
+function postBootPPU(): PPU {
+  const ppu = ppuBuild();
+  ppu.vram[0x992D-0x8000] = 0x16;
+  return ppu;
+}
 
+describe("ppu", (): void => {
   // High-contrast screen palette
   const screenPalette = Palette(
     makeColor("#FFFFFF"),
@@ -92,19 +96,30 @@ describe("ppu", (): void => {
   });
 
   it("makeBgTileImage", async (): Promise<void> => {
+    const tileCanvas = createCanvas(160, 144);
+    const tileCtx = tileCanvas.getContext("2d");
     const tilePaletteData = makeTilePaletteImage(tileDataGb);
     const actual = makeBgTileImage(tilePaletteData, paletteNormal, screenPalette);
-    canvasCtx.putImageData(actual, 0, 0);
+    tileCtx.putImageData(actual, 0, 0);
     const out = createWriteStream("./dist/gb-test-tile1.png");
-    await pipeline(canvas.createPNGStream(), out);
+    await pipeline(tileCanvas.createPNGStream(), out);
     const expected = imageToData(await loadImage("./test/fixtures/gb-test-tile1.png"));
     expect(actual).to.deep.equal(expected);
   });
 
   it("getBgTileIndex", (): void => {
-    const ppu = ppuBuild();
-    ppu.vram[0x992D-0x8000] = 0x16; 
+    const ppu = postBootPPU();
     expect(getBgTileIndex(ppu, 0x0, 0x0)).to.equal(0x0);
     expect(getBgTileIndex(ppu, 0x0D, 0x09)).to.equal(0x16);
+  });
+
+  it("makeBgImage", async (): Promise<void> => {
+    const bgCanvas = createCanvas(256, 256);
+    const bgCtx = bgCanvas.getContext("2d");
+    const actualImage = makeBgImage();
+    bgCtx.putImageData(actualImage, 0, 0);
+    await pipeline(bgCanvas.createPNGStream(), createWriteStream("./dist/boot-bg.png"));
+    // const expectedBootBg = await loadImage("./test/fixtures/boot-bg.png");
+    // expect(actualImage).to.deep.equal(expectedBootBg);
   });
 });

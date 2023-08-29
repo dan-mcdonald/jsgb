@@ -258,6 +258,11 @@ export function getBgTileIndex(ppu: PPU, x: number, y: number): number {
   return tileIndex;
 }
 
+export function makeBgImage(): ImageData {
+  const image = new ImageData(256, 256);
+  return image;
+}
+
 export function renderScreen(screenContext: CanvasRenderingContext2D, _: PPU): void {
   const imageData = screenContext.createImageData(160, 144);
   // renderBgSprites(imageData, ppu);
