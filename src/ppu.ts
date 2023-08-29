@@ -250,8 +250,12 @@ export function ppuTick(ppu: PPU, bus: Bus): void {
 // function renderFgSprites(imageData: ImageData, ppu: PPU): void {
 // }
 
-export function getBgTileIndex(x: number, y: number): number {
-  return (y * 32) + x;
+export function getBgTileIndex(ppu: PPU, x: number, y: number): number {
+  const bgTileMapBase = (ppu.ioRegs[Register.LCDC] & 0x08) ? 0x1C00 : 0x1800;
+  const bgTileMapOffset = (y * 32) + x;
+  const bgTileMapAddr = bgTileMapBase + bgTileMapOffset;
+  const tileIndex = ppu.vram[bgTileMapAddr];
+  return tileIndex;
 }
 
 export function renderScreen(screenContext: CanvasRenderingContext2D, _: PPU): void {

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Color, Palette, makeColor, colorForPaletteIndexBg, colorForPaletteIndexObj, makeTilePaletteImage, makeTilePaletteRow, makeBgTileImage, TileData, TilePaletteData, getBgTileIndex } from '../src/ppu';
+import { Color, Palette, makeColor, colorForPaletteIndexBg, colorForPaletteIndexObj, makeTilePaletteImage, makeTilePaletteRow, makeBgTileImage, TileData, TilePaletteData, getBgTileIndex, ppuBuild } from '../src/ppu';
 import { createCanvas, loadImage, ImageData } from 'canvas';
 import type { ImageData as NodeImageData, Image as NodeImage } from 'canvas';
 import { pipeline } from 'node:stream/promises';
@@ -102,8 +102,8 @@ describe("ppu", (): void => {
   });
 
   it("getBgTileIndex", (): void => {
-    const expected = 0x16;
-    const actual = getBgTileIndex(0x0D, 0x09);
-    expect(actual).to.equal(expected);
+    const ppu = ppuBuild();
+    expect(getBgTileIndex(ppu, 0x0, 0x0)).to.equal(0x0);
+    expect(getBgTileIndex(ppu, 0x0D, 0x09)).to.equal(0x16);
   });
 });
