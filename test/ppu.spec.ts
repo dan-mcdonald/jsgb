@@ -103,6 +103,7 @@ describe("ppu", (): void => {
 
   it("getBgTileIndex", (): void => {
     const ppu = ppuBuild();
+    ppu.vram[0x992D-0x8000] = 0x16; 
     expect(getBgTileIndex(ppu, 0x0, 0x0)).to.equal(0x0);
     expect(getBgTileIndex(ppu, 0x0D, 0x09)).to.equal(0x16);
   });
