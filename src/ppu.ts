@@ -3,8 +3,6 @@ import { Bus } from "./bus";
 import { hex8 } from "./util";
 import { Interrupt, setInterrupt } from "./interrupt";
 
-import type { ImageData as NodeImageData } from "canvas";
-
 interface Color { bytes: Uint8Array }
 export type Palette = Color[];
 
@@ -44,8 +42,8 @@ export function colorForPaletteIndexObj(screen: Palette, palette: number, index:
   return colorForPaletteIndexBg(screen, palette, index);
 }
 
-export function makeTilePaletteRow(byte1: number, byte2: number): Uint8ClampedArray {
-  const row = new Uint8ClampedArray(8);
+export function makeTilePaletteRow(byte1: number, byte2: number): Uint8Array {
+  const row = new Uint8Array(8);
   for (let i = 0; i < 8; i++) {
     // byte2 holds the high bits of the color, byte1 holds the low bits
     const highBit = (byte2 >> (7 - i)) & 0x01;
@@ -56,10 +54,10 @@ export function makeTilePaletteRow(byte1: number, byte2: number): Uint8ClampedAr
 }
 
 export interface TileData {
-  tileData: Uint8ClampedArray;
+  tileData: Uint8Array;
 }
 
-export function TileData(tileData: Uint8ClampedArray): TileData {
+export function TileData(tileData: Uint8Array): TileData {
   if (tileData.length !== 16) {
     throw new Error(`Invalid tile data length ${tileData.length}`);
   }
@@ -67,10 +65,10 @@ export function TileData(tileData: Uint8ClampedArray): TileData {
 }
 
 export interface TilePaletteData {
-  tilePaletteData: Uint8ClampedArray;
+  tilePaletteData: Uint8Array;
 }
 
-export function TilePaletteData(tilePaletteData: Uint8ClampedArray): TilePaletteData {
+export function TilePaletteData(tilePaletteData: Uint8Array): TilePaletteData {
   if (tilePaletteData.length !== 64) {
     throw new Error(`Invalid tile data length ${tilePaletteData.length}`);
   }
@@ -79,7 +77,7 @@ export function TilePaletteData(tilePaletteData: Uint8ClampedArray): TilePalette
 
 export function makeTilePaletteImage(tile: TileData): TilePaletteData {
   const tileData = tile.tileData;
-  const image = new Uint8ClampedArray(8 * 8);
+  const image = new Uint8Array(8 * 8);
   for (let i = 0; i < 8; i++) {
     const row = makeTilePaletteRow(tileData[i * 2], tileData[i * 2 + 1]);
     image.set(row, i * 8);
@@ -89,7 +87,7 @@ export function makeTilePaletteImage(tile: TileData): TilePaletteData {
 
 export function makeBgTileImage(
   tilePalette: TilePaletteData,
-  palette: number, screenPalette: Palette): ImageData | NodeImageData {
+  palette: number, screenPalette: Palette): ImageData {
   const image = new ImageData(8, 8);
   const tilePaletteData = tilePalette.tilePaletteData;
   for (let i = 0; i < 8 * 8; i++) {
@@ -102,19 +100,19 @@ export function makeBgTileImage(
   return image;
 }
 
-enum Register {
-  LCDC = 0x0,
-  STAT = 0x1,
-  SCY = 0x2,
-  SCX = 0x3,
-  LY = 0x4,
-  LYC = 0x5,
-  DMA = 0x6,
-  BGP = 0x7,
-  OBP0 = 0x8,
-  OBP1 = 0x9,
-  WY = 0xA,
-  WX = 0xB,
+export enum Register {
+  LCDC,
+  STAT,
+  SCY,
+  SCX,
+  LY,
+  LYC,
+  DMA,
+  BGP,
+  OBP0,
+  OBP1,
+  WY,
+  WX,
 }
 
 enum Mode {
@@ -133,7 +131,7 @@ export interface PPU {
 
 export function ppuBuild(): PPU {
   return {
-    ioRegs: new Uint8Array(0xB + 1),
+    ioRegs: new Uint8Array(Register.WX + 1),
     vram: new Uint8Array(0x2000),
     oam: new Uint8Array(0xA0),
     lineDot: 0,
@@ -258,9 +256,25 @@ export function getBgTileIndex(ppu: PPU, x: number, y: number): number {
   return tileIndex;
 }
 
-export function makeBgImage(): ImageData {
-  const image = new ImageData(256, 256);
-  return image;
+/** Get the offset within the VRAM where the tile data begins for the specified tile index */
+export function bgTileImageVramOffset(lcdc4: boolean, index: number): number {
+  if (!lcdc4 && index > 127) {
+    throw Error("TODO implement signed BG/Win VRAM tile data");
+  }
+  return (lcdc4 ? 0x0000 : 0x1000) + (index * 16);
+}
+
+export function drawBg(ctx: CanvasRenderingContext2D, ppu: PPU): void {
+  for (let y = 0; y < 32; y++) {
+    for (let x = 0; x < 32; x++) {
+      const tileIndex = getBgTileIndex(ppu, x, y);
+      const tileAddr = bgTileImageVramOffset((ppu.ioRegs[Register.LCDC] & (1 << 4)) != 0, tileIndex);
+      const tile = TileData(ppu.vram.slice(tileAddr, tileAddr + 16));
+      const tilePalette = makeTilePaletteImage(tile);
+      const tileImage = makeBgTileImage(tilePalette, ppu.ioRegs[Register.BGP], screenPalette);
+      ctx.putImageData(tileImage, x * 8, y * 8);
+    }
+  }
 }
 
 export function renderScreen(screenContext: CanvasRenderingContext2D, _: PPU): void {

@@ -1,11 +1,11 @@
 import { expect } from 'chai';
-import { Color, Palette, makeColor, colorForPaletteIndexBg, colorForPaletteIndexObj, makeTilePaletteImage, makeTilePaletteRow, makeBgTileImage, TileData, TilePaletteData, getBgTileIndex, ppuBuild, makeBgImage } from '../src/ppu';
+import { Color, Palette, makeColor, colorForPaletteIndexBg, colorForPaletteIndexObj, makeTilePaletteImage, makeTilePaletteRow, makeBgTileImage, TileData, TilePaletteData, getBgTileIndex, ppuBuild, drawBg, bgTileImageVramOffset } from '../src/ppu';
 import type { PPU } from '../src/ppu';
 import { load } from "../src/bess";
 import { createCanvas, loadImage, ImageData } from 'canvas';
 import type { ImageData as NodeImageData, Image as NodeImage } from 'canvas';
-import { pipeline } from 'node:stream/promises';
-import { createWriteStream } from 'node:fs';
+// import { pipeline } from 'node:stream/promises';
+// import { createWriteStream } from 'node:fs';
 import { readFile } from "node:fs/promises"
 
 // use canvas to polyfill ImageData when running tests in node
@@ -20,8 +20,9 @@ function imageToData(image: NodeImage): NodeImageData {
 
 async function postBootPPU(): Promise<PPU> {
   const ppu = ppuBuild();
-  const bootend = await readFile("test/fixtures/bootend.sna");
-  ppu.vram = load(bootend).vram;
+  const bess = load(await readFile("test/fixtures/bootend.sna"));
+  ppu.vram = bess.vram;
+  ppu.ioRegs = bess.ioregs.slice(0x40, 0x40 + ppu.ioRegs.length);
   return ppu;
 }
 
@@ -70,10 +71,10 @@ describe("ppu", (): void => {
   });
 
   it("makeTilePaletteRow", (): void => {
-    expect(makeTilePaletteRow(0x7C, 0x56)).to.deep.equal(Uint8ClampedArray.from([0, 3, 1, 3, 1, 3, 2, 0]));
+    expect(makeTilePaletteRow(0x7C, 0x56)).to.deep.equal(Uint8Array.from([0, 3, 1, 3, 1, 3, 2, 0]));
   });
 
-  const tileDataGb = TileData(Uint8ClampedArray.from([
+  const tileDataGb = TileData(Uint8Array.from([
     0x3C, 0x7E, // 00 10 11 11 11 11 10 00
     0x42, 0x42, // 00 11 00 00 00 00 11 00
     0x42, 0x42, // 00 11 00 00 00 00 11 00
@@ -85,7 +86,7 @@ describe("ppu", (): void => {
   ]));
 
   it("makeTilePaletteImage", (): void => {
-    const expected = TilePaletteData(Uint8ClampedArray.from([
+    const expected = TilePaletteData(Uint8Array.from([
       0, 2, 3, 3, 3, 3, 2, 0,
       0, 3, 0, 0, 0, 0, 3, 0,
       0, 3, 0, 0, 0, 0, 3, 0,
@@ -116,13 +117,34 @@ describe("ppu", (): void => {
     expect(getBgTileIndex(ppu, 0x0D, 0x09)).to.equal(0x16);
   });
 
-  it("makeBgImage", async (): Promise<void> => {
+  it("bgTileImageVramOffset", (): void => {
+    expect(bgTileImageVramOffset(true, 0)).to.equal(0);
+    expect(bgTileImageVramOffset(true, 1)).to.equal(16 * 1);
+    expect(bgTileImageVramOffset(true, 128)).to.equal(16 * 128);
+    expect(bgTileImageVramOffset(true, 129)).to.equal(16 * 129);
+
+    expect(bgTileImageVramOffset(false, 0)).to.equal(0x1000 + 0 * 0);
+    expect(bgTileImageVramOffset(false, 1)).to.equal(0x1000 + 16 * 1);
+    // expect(bgTileImageVramOffset(true, 128)).to.equal(16 * 128);
+    // expect(bgTileImageVramOffset(true, 129)).to.equal(16 * 129);
+
+    for(let i = 0; i < 256; i++) {
+      if (i < 128) {
+        expect(bgTileImageVramOffset(false, i) - 0x1000).to.equal(bgTileImageVramOffset(true, i));
+      } 
+      // else {
+      //   expect(bgTileImageVramOffset(true, i)).to.equal(bgTileImageVramOffset(false, i));
+      // }
+    }
+  });
+
+  it("drawBg", async (): Promise<void> => {
     const bgCanvas = createCanvas(256, 256);
-    const bgCtx = bgCanvas.getContext("2d");
-    const actualImage = makeBgImage();
-    bgCtx.putImageData(actualImage, 0, 0);
-    await pipeline(bgCanvas.createPNGStream(), createWriteStream("./dist/boot-bg.png"));
-    // const expectedBootBg = await loadImage("./test/fixtures/boot-bg.png");
-    // expect(actualImage).to.deep.equal(expectedBootBg);
+    const bgCtx = (bgCanvas.getContext("2d") as unknown) as CanvasRenderingContext2D;
+    drawBg(bgCtx, await postBootPPU());
+    // await pipeline(bgCanvas.createPNGStream(), createWriteStream("./dist/bootend-bg.png"));
+    const expectedBootBg = imageToData(await loadImage("./test/fixtures/bootend-bg.png"));
+    const actualImage = bgCtx.getImageData(0, 0, 256, 256);
+    expect(actualImage).to.deep.equal(expectedBootBg);
   });
 });
