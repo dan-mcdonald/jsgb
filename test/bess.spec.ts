@@ -25,8 +25,9 @@ describe("bess", (): void => {
 
   it("load", async (): Promise<void> => {
     const bootend = await readFile("test/fixtures/bootend.sna");
-    const { vram } = load(bootend);
+    const { vram, ioregs } = load(bootend);
     expect(vram.length).to.equal(0x2000);
     expect(vram[0x992D-0x8000]).to.equal(0x16);
+    expect(ioregs[0x47]).to.equal(0xfc);
   });
 });

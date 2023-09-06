@@ -9,6 +9,7 @@ function arrayEqual(a: Uint8Array, b: Uint8Array): boolean {
 
 interface BESSFile {
   vram: Uint8Array
+  ioregs: Uint8Array
 }
 
 function getFooter(contents: Uint8Array): Uint8Array {
@@ -33,6 +34,7 @@ export function load(contents: Uint8Array): BESSFile {
   let pos = headerOffset(contents);
   let done = false;
   let vram = new Uint8Array(0);
+  let ioregs = new Uint8Array(0);
   while (!done) {
     const blockTag = contents.slice(pos, pos + 4);
     const blockLength = asLEInt(contents.slice(pos + 4, pos + 8));
@@ -43,10 +45,11 @@ export function load(contents: Uint8Array): BESSFile {
       const vramSize = asLEInt(contents.slice(pos + 0xA0, pos + 0xA0 + 4));
       const vramOffset = asLEInt(contents.slice(pos + 0xA4, pos + 0xA4 + 4));
       vram = contents.slice(vramOffset, vramOffset + vramSize);
+      ioregs = contents.slice(pos + 0x18, pos + 0x18 + 128);
     }
     pos += blockLength;
   }
-  return {vram};
+  return {vram, ioregs};
 }
 
 export function headerOffset(contents: Uint8Array): number {
