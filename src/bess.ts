@@ -41,7 +41,7 @@ export function load(contents: Uint8Array): BESSFile {
       done = true;
     } else if (arrayEqual(blockTag, encoder.encode("CORE"))) {
       const vramSize = asLEInt(contents.slice(pos + 0xA0, pos + 0xA0 + 4));
-      const vramOffset = asLEInt(contents.slice(pos + 0xA0, pos + 0xA0 + 4));
+      const vramOffset = asLEInt(contents.slice(pos + 0xA4, pos + 0xA4 + 4));
       vram = contents.slice(vramOffset, vramOffset + vramSize);
     }
     pos += blockLength;
