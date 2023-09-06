@@ -1,10 +1,12 @@
 import { expect } from 'chai';
 import { Color, Palette, makeColor, colorForPaletteIndexBg, colorForPaletteIndexObj, makeTilePaletteImage, makeTilePaletteRow, makeBgTileImage, TileData, TilePaletteData, getBgTileIndex, ppuBuild, makeBgImage } from '../src/ppu';
 import type { PPU } from '../src/ppu';
+import { load } from "../src/bess";
 import { createCanvas, loadImage, ImageData } from 'canvas';
 import type { ImageData as NodeImageData, Image as NodeImage } from 'canvas';
 import { pipeline } from 'node:stream/promises';
 import { createWriteStream } from 'node:fs';
+import { readFile } from "node:fs/promises"
 
 // use canvas to polyfill ImageData when running tests in node
 (global as { [key: string]: any })["ImageData"] = ImageData; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -16,9 +18,10 @@ function imageToData(image: NodeImage): NodeImageData {
   return canvasCtx.getImageData(0, 0, image.width, image.height);
 }
 
-function postBootPPU(): PPU {
+async function postBootPPU(): Promise<PPU> {
   const ppu = ppuBuild();
-  ppu.vram[0x992D-0x8000] = 0x16;
+  const bootend = await readFile("test/fixtures/bootend.sna");
+  ppu.vram = load(bootend).vram;
   return ppu;
 }
 
@@ -107,8 +110,8 @@ describe("ppu", (): void => {
     expect(actual).to.deep.equal(expected);
   });
 
-  it("getBgTileIndex", (): void => {
-    const ppu = postBootPPU();
+  it("getBgTileIndex", async (): Promise<void> => {
+    const ppu = await postBootPPU();
     expect(getBgTileIndex(ppu, 0x0, 0x0)).to.equal(0x0);
     expect(getBgTileIndex(ppu, 0x0D, 0x09)).to.equal(0x16);
   });
