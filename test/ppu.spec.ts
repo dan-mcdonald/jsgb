@@ -96,13 +96,13 @@ describe("ppu", (): void => {
   });
 
   it("makeBgTileImage", async (): Promise<void> => {
-    const tileCanvas = createCanvas(160, 144);
-    const tileCtx = tileCanvas.getContext("2d");
     const tilePaletteData = makeTilePaletteImage(tileDataGb);
     const actual = makeBgTileImage(tilePaletteData, paletteNormal, screenPalette);
-    tileCtx.putImageData(actual, 0, 0);
-    const out = createWriteStream("./dist/gb-test-tile1.png");
-    await pipeline(tileCanvas.createPNGStream(), out);
+    // const tileCanvas = createCanvas(160, 144);
+    // const tileCtx = tileCanvas.getContext("2d");
+    // tileCtx.putImageData(actual, 0, 0);
+    // const out = createWriteStream("./dist/gb-test-tile1.png");
+    // await pipeline(tileCanvas.createPNGStream(), out);
     const expected = imageToData(await loadImage("./test/fixtures/gb-test-tile1.png"));
     expect(actual).to.deep.equal(expected);
   });
