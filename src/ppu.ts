@@ -264,7 +264,12 @@ export function bgTileImageVramOffset(lcdc4: boolean, index: number): number {
   return (lcdc4 ? 0x0000 : 0x1000) + (index * 16);
 }
 
-export function drawBg(ctx: CanvasRenderingContext2D, ppu: PPU): void {
+export function makeBgImage(ppu: PPU): ImageData {
+  const canvas = new OffscreenCanvas(256, 256);
+  const ctx = canvas.getContext("2d");
+  if (ctx == null) {
+    throw new Error("Failed to get 2d context");
+  }
   for (let y = 0; y < 32; y++) {
     for (let x = 0; x < 32; x++) {
       const tileIndex = getBgTileIndex(ppu, x, y);
@@ -275,6 +280,7 @@ export function drawBg(ctx: CanvasRenderingContext2D, ppu: PPU): void {
       ctx.putImageData(tileImage, x * 8, y * 8);
     }
   }
+  return ctx.getImageData(0, 0, 256, 256);
 }
 
 export function renderScreen(screenContext: CanvasRenderingContext2D, _: PPU): void {

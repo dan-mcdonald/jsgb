@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Color, Palette, makeColor, colorForPaletteIndexBg, colorForPaletteIndexObj, makeTilePaletteImage, makeTilePaletteRow, makeBgTileImage, TileData, TilePaletteData, getBgTileIndex, ppuBuild, drawBg, bgTileImageVramOffset } from '../src/ppu';
+import { Color, Palette, makeColor, colorForPaletteIndexBg, colorForPaletteIndexObj, makeTilePaletteImage, makeTilePaletteRow, makeBgTileImage, TileData, TilePaletteData, getBgTileIndex, ppuBuild, makeBgImage, bgTileImageVramOffset } from '../src/ppu';
 import type { PPU } from '../src/ppu';
 import { load } from "../src/bess";
 import { createCanvas, loadImage, ImageData } from 'canvas';
@@ -10,6 +10,7 @@ import { readFile } from "node:fs/promises"
 
 // use canvas to polyfill ImageData when running tests in node
 (global as { [key: string]: any })["ImageData"] = ImageData; // eslint-disable-line @typescript-eslint/no-explicit-any
+(global as { [key: string]: any })["OffscreenCanvas"] = createCanvas; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 function imageToData(image: NodeImage): NodeImageData {
   const canvas = createCanvas(image.width, image.height);
@@ -138,13 +139,10 @@ describe("ppu", (): void => {
     }
   });
 
-  it("drawBg", async (): Promise<void> => {
-    const bgCanvas = createCanvas(256, 256);
-    const bgCtx = (bgCanvas.getContext("2d") as unknown) as CanvasRenderingContext2D;
-    drawBg(bgCtx, await postBootPPU());
+  it("makeBgImage", async (): Promise<void> => {
+    const actualImage = makeBgImage(await postBootPPU());
     // await pipeline(bgCanvas.createPNGStream(), createWriteStream("./dist/bootend-bg.png"));
     const expectedBootBg = imageToData(await loadImage("./test/fixtures/bootend-bg.png"));
-    const actualImage = bgCtx.getImageData(0, 0, 256, 256);
     expect(actualImage).to.deep.equal(expectedBootBg);
   });
 });
