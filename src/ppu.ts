@@ -3,6 +3,11 @@ import { Bus } from "./bus";
 import { hex8 } from "./util";
 import { Interrupt, setInterrupt } from "./interrupt";
 
+const SCREEN_WIDTH = 160;
+const SCREEN_HEIGHT = 144;
+const BG_WIDTH = 256;
+const BG_HEIGHT = 256;
+
 interface Color { bytes: Uint8Array }
 export type Palette = Color[];
 
@@ -283,11 +288,25 @@ export function makeBgImage(ppu: PPU): ImageData {
   return ctx.getImageData(0, 0, 256, 256);
 }
 
-export function renderScreen(screenContext: CanvasRenderingContext2D, _: PPU): void {
-  const imageData = screenContext.createImageData(160, 144);
-  // renderBgSprites(imageData, ppu);
-  // renderBackground(imageData, ppu);
-  // renderWindow(imageData, ppu);
-  // renderFgSprites(imageData, ppu);
-  screenContext.putImageData(imageData, 0, 0);
+export function makeScreenImage(ppu: PPU): ImageData {
+  const screenImage = new ImageData(SCREEN_WIDTH, SCREEN_HEIGHT);
+  const bgImage = makeBgImage(ppu);
+  const scx = ppu.ioRegs[Register.SCX];
+  const scy = ppu.ioRegs[Register.SCY];
+  for (let y = 0; y < SCREEN_HEIGHT; y++) {
+    for (let x = 0; x < SCREEN_WIDTH; x++) {
+      // sprite
+      // window
+      const bgX = (scx + x) % BG_WIDTH;
+      const bgY = (scy + y) % BG_HEIGHT;
+      const bgOffset = 4 * (bgY * BG_WIDTH + bgX);
+      const bgPixel = bgImage.data.slice(bgOffset, bgOffset + 4);
+      screenImage.data.set(bgPixel, 4 * (y * SCREEN_WIDTH + x));
+    }
+  }
+  return screenImage;  
+}
+
+export function renderScreen(screenContext: CanvasRenderingContext2D, ppu: PPU): void {
+  screenContext.putImageData(makeScreenImage(ppu), 0, 0);
 }
