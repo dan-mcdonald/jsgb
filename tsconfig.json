@@ -1,15 +1,15 @@
 {
   "compilerOptions": {
     "target": "es2022",
-    "module": "es2022",
+    "module": "esnext",
     "lib": ["es2022"],
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "bundler",
     "strict": true,
   },
   "ts-node": {
-    "esm": true,
     "compilerOptions": {
-      "module": "nodenext",
+      "module": "NodeNext",
+      "moduleResolution": "NodeNext",
     },
   }
 }
