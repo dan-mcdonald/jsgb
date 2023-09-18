@@ -1,6 +1,24 @@
 import {initCPU, step, maskZ} from "../src/cpu";
 import { expect } from 'chai';
 import { BusRead, BusWrite } from "../src/bus";
+import buildBus from "../src/buildBus";
+import { readFile } from "fs/promises";
+import { cartBuild } from "../src/cart";
+import { ppuBuild, ppuTick } from "../src/ppu";
+import { audioInit } from "../src/audio";
+import { load as bessLoad } from "../src/bess";
+
+describe("0x2e ld l, imm", (): void => {
+  const readb: BusRead = (_: number): number => 0x2e;
+  const writeb: BusWrite = (_: number, __: number): void => {};
+  const bus = {readb, writeb};
+
+  it("loads 0x2e into l", () => {
+    const cpu = initCPU();
+    step(cpu, bus);
+    expect(cpu.regs.l).to.equal(0x2e);
+  });
+});
 
 describe("dec b", (): void => {
   const readb: BusRead = (_: number): number => 0x05;
@@ -12,6 +30,13 @@ describe("dec b", (): void => {
     cpu.regs.b = 4;
     step(cpu, bus);
     expect(cpu.regs.b).to.equal(3);
+  });
+
+  it("decrements 0 to 255", () => {
+    const cpu = initCPU();
+    cpu.regs.b = 0;
+    step(cpu, bus);
+    expect(cpu.regs.b).to.equal(255);
   });
 
   it("clears Z flag when previously set", (): void => {
@@ -55,5 +80,38 @@ describe("swap a", (): void => {
     cpu.regs.a = 0xa5;
     step(cpu, bus);
     expect(cpu.regs.a).to.equal(0x5a);
+  });
+});
+
+function loadBootRom(): Promise<Uint8Array> {
+  return readFile("dist/DMG_ROM.bin");
+}
+
+function loadCart(): Promise<Uint8Array> {
+  return readFile("dist/game.gb");
+}
+
+describe("bootrom", (): void => {
+  it("vram matches", async (): Promise<void> => {
+    const cpu = initCPU();
+    const bootRom = await loadBootRom();
+    const cart = cartBuild(await loadCart());
+    const ppu = ppuBuild();
+    const audio = audioInit();
+  
+    const bus = buildBus(bootRom, cart, ppu, audio);
+    while (cpu.pc !== 0x0100) {
+      const cycles = step(cpu, bus);
+      for(let i = 0; i < cycles; i++) {
+        ppuTick(ppu, bus);
+      }
+    }
+    const bess = bessLoad(await readFile("test/fixtures/bootend.sna"));
+
+    for(let i = 0; i < 0x20; i++) {
+      const baseAddr = i * 0x100;
+      const endAddr = baseAddr + 0x100;
+      expect(ppu.vram.slice(baseAddr, endAddr), "vram 0x"+baseAddr.toString(16)).to.deep.equal(bess.vram.slice(baseAddr, endAddr));
+    }
   });
 });

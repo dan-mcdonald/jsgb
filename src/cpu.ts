@@ -507,10 +507,10 @@ export function step(cpu: CPU, bus: Bus): number {
         logInst("INC L");
         incR8("l");
         return 4;
-      case 0x2E: // LD E,n
+      case 0x2E: // LD L,n
         i8 = imm8();
-        logInst(`LD E,${hex8(i8)}`);
-        cpu.regs.e = i8;
+        logInst(`LD L,${hex8(i8)}`);
+        cpu.regs.l = i8;
         return 8;
       case 0x2F: // CPL
         logInst("CPL");
