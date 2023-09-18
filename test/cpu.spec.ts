@@ -88,7 +88,7 @@ function loadBootRom(): Promise<Uint8Array> {
 }
 
 function loadCart(): Promise<Uint8Array> {
-  return readFile("dist/game.gb");
+  return readFile("test/fixtures/cpu_instrs.gb");
 }
 
 describe("bootrom", (): void => {

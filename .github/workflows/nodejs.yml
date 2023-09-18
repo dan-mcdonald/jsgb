@@ -19,6 +19,12 @@ jobs:
         node-version: ${{ matrix.node-version }}
     # - run: corepack enable
     - run: npm install
+    - uses: suisei-cn/actions-download-file@v1.3.0
+      name: Download bootrom
+      with:
+        url: https://gbdev.gg8.se/files/roms/bootroms/dmg_boot.bin
+        target: dist/
+        filename: DMG_ROM.bin
     - run: npm run lint
     - run: npm run test
     - run: npm run build
