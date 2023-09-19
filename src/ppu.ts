@@ -9,7 +9,14 @@ const BG_WIDTH = 256;
 const BG_HEIGHT = 256;
 
 interface Color { bytes: Uint8Array }
-export type Palette = Color[];
+export type Palette = [Color, Color, Color, Color];
+
+enum ScreenColor {
+  WHITE,
+  LIGHT_GRAY,
+  DARK_GRAY,
+  BLACK,
+}
 
 export function Palette(white: Color, lightGray: Color, darkGray: Color, black: Color): Palette {
   return [white, lightGray, darkGray, black];
@@ -132,6 +139,7 @@ export interface PPU {
   vram: Uint8Array;
   oam: Uint8Array;
   lineDot: number;
+  screenImage: ScreenColor[]
 }
 
 export function ppuBuild(): PPU {
@@ -140,6 +148,7 @@ export function ppuBuild(): PPU {
     vram: new Uint8Array(0x2000),
     oam: new Uint8Array(0xA0),
     lineDot: 0,
+    screenImage: Array<ScreenColor>(SCREEN_WIDTH * SCREEN_HEIGHT).fill(ScreenColor.WHITE),
   };
 }
 
@@ -190,6 +199,52 @@ function getLYCompare(ppu: PPU): number {
   return ppu.ioRegs[Register.LYC];
 }
 
+function getY(ppu: PPU): number {
+  return ppu.ioRegs[Register.LY];
+}
+
+function screenColorForPalette(palette: number, index: number): ScreenColor {
+  return (palette >> (index * 2)) & 0x03;
+}
+
+function lcdc4(ppu: PPU): boolean {
+  return (ppu.ioRegs[Register.LCDC] & (1 << 4)) != 0;
+}
+
+function calcBgPixel(ppu: PPU, x: number, y: number): ScreenColor {
+  const tileIndex = getBgTileIndex(ppu, Math.floor(x / 8), Math.floor(y / 8));
+  const tileAddr = bgTileImageVramOffset(lcdc4(ppu), tileIndex);
+  const tile = TileData(ppu.vram.slice(tileAddr, tileAddr + 16));
+  const tiley = y % 8;
+  const tilex = x % 8;
+  const [byte1, byte2] = [tile.tileData[tiley * 2], tile.tileData[tiley * 2 + 1]];
+  const highBit = (byte2 >> (7 - tilex)) & 0x01;
+  const lowBit = (byte1 >> (7 - tilex)) & 0x01;
+  const paletteIndex = (highBit << 1) | lowBit;
+  return screenColorForPalette(ppu.ioRegs[Register.BGP], paletteIndex);
+}
+
+function calcScreenPixel(ppu: PPU, x: number, y: number): ScreenColor {
+  if (x < 0 || x > SCREEN_WIDTH || y < 0 || y > SCREEN_HEIGHT) {
+    throw new Error(`Invalid pixel coordinates (${x}, ${y})`);
+  }
+  const bgx = (ppu.ioRegs[Register.SCX] + x) % BG_WIDTH;
+  const bgy = (ppu.ioRegs[Register.SCY] + y) % BG_HEIGHT;
+  const bgPixel = calcBgPixel(ppu, bgx, bgy);
+  // TODO Window
+  // TODO OAM
+  return bgPixel;
+}
+
+function setPixel(ppu: PPU, x: number, y: number, color: ScreenColor): void {
+  ppu.screenImage[y * SCREEN_WIDTH + x] = color;
+}
+
+function drawPixel(ppu: PPU, x: number): void {
+  const y = getY(ppu);
+  setPixel(ppu, x, y, calcScreenPixel(ppu, x, y));
+}
+
 export function ppuTick(ppu: PPU, bus: Bus): void {
   ppu.lineDot++;
 
@@ -234,6 +289,8 @@ export function ppuTick(ppu: PPU, bus: Bus): void {
     case Mode.THREE:
       if (ppu.lineDot === 80 + 168) {
         setMode(ppu, Mode.ZERO);
+      } else if (ppu.lineDot < 80 + SCREEN_WIDTH) {
+        drawPixel(ppu, ppu.lineDot - 80);
       }
       break;
   }
@@ -254,6 +311,9 @@ export function ppuTick(ppu: PPU, bus: Bus): void {
 // }
 
 export function getBgTileIndex(ppu: PPU, x: number, y: number): number {
+  if (x < 0 || x > 31 || y < 0 || y > 31) {
+    throw new Error(`Invalid tile coordinates (${x}, ${y})`);
+  }
   const bgTileMapBase = (ppu.ioRegs[Register.LCDC] & 0x08) ? 0x1C00 : 0x1800;
   const bgTileMapOffset = (y * 32) + x;
   const bgTileMapAddr = bgTileMapBase + bgTileMapOffset;
@@ -290,21 +350,13 @@ export function makeBgImage(ppu: PPU): ImageData {
 
 export function makeScreenImage(ppu: PPU): ImageData {
   const screenImage = new ImageData(SCREEN_WIDTH, SCREEN_HEIGHT);
-  const bgImage = makeBgImage(ppu);
-  const scx = ppu.ioRegs[Register.SCX];
-  const scy = ppu.ioRegs[Register.SCY];
   for (let y = 0; y < SCREEN_HEIGHT; y++) {
     for (let x = 0; x < SCREEN_WIDTH; x++) {
-      // sprite
-      // window
-      const bgX = (scx + x) % BG_WIDTH;
-      const bgY = (scy + y) % BG_HEIGHT;
-      const bgOffset = 4 * (bgY * BG_WIDTH + bgX);
-      const bgPixel = bgImage.data.slice(bgOffset, bgOffset + 4);
-      screenImage.data.set(bgPixel, 4 * (y * SCREEN_WIDTH + x));
+      const bgPixel = screenPalette[ppu.screenImage[y * SCREEN_WIDTH + x]];
+      screenImage.data.set(bgPixel.bytes, 4 * (y * SCREEN_WIDTH + x));
     }
   }
-  return screenImage;  
+  return screenImage;
 }
 
 export function renderScreen(screenContext: CanvasRenderingContext2D, ppu: PPU): void {
