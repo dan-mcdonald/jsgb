@@ -13,6 +13,8 @@ module.exports = {
   plugins: ['@typescript-eslint'],
   root: true,
   rules: {
-    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+    "@typescript-eslint/no-unnecessary-condition": ["error", { allowConstantLoopConditions: true}],
+    "no-constant-condition": ["error", { checkLoops: false }],
   },
 };

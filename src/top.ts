@@ -7,7 +7,7 @@ import {initCPU, step} from "./cpu";
 import buildBus from "./buildBus";
 import { ppuTick, ppuBuild, renderScreen } from "./ppu";
 import { audioInit } from "./audio";
-import {cartBuild} from "./cart";
+import {Cart, cartBuild} from "./cart";
 import {hex8, hex16} from "./util";
 
 // http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf
@@ -94,28 +94,34 @@ const updateDebugInfo = function(cpu: CPU, bus: Bus, cycleCount: number): void {
 
 }
 
-export async function main (): Promise<void> {
-  console.log("jsgb initializing");
-  initScreen();
+function emulate(bootRom: Uint8Array, cart: Cart, screenContext: CanvasRenderingContext2D): (() => void) {
+  console.log("emulate()");
+  let running = true; 
   const cpu = initCPU();
-  const bootRom = await loadBootRom();
-  const cart = cartBuild(await loadCart());
   const ppu = ppuBuild();
   const audio = audioInit();
-
   const bus = buildBus(bootRom, cart, ppu, audio);
 
   // let i = 0;
 
-  const screenContext = getScreenContext();
   let cycleCount = 0;
 
+  let frameId: number | null = null;
+  let lastTs: DOMHighResTimeStamp | null = null;
+
   function frame(ts: DOMHighResTimeStamp) {
-    const targetCycles = ts * 4194.304;
-    // const targetCycles = cycleCount + 10000;
-    while(cycleCount < targetCycles && cpu.pc != 0x0100) {
+    if (lastTs == null) {
+      lastTs = ts;
+      window.requestAnimationFrame(frame);
+      return;
+    }
+    const targetCycles = (ts - lastTs) * 4194.304;
+    
+    let frameCycles = 0;
+    while(frameCycles < targetCycles && cpu.pc != 0x0100) {
       const cycles = step(cpu, bus);
       cycleCount += cycles;
+      frameCycles += cycles;
       for(let i = 0; i < cycles; i++) {
         ppuTick(ppu, bus);
       }
@@ -123,19 +129,45 @@ export async function main (): Promise<void> {
     renderScreen(screenContext, ppu);
     // screenContext.fillText(`PC = 0x${hex16(cpu.pc)}`, 10, 100);
     updateDebugInfo(cpu, bus, cycleCount);
-    if (cpu.pc != 0x0100) {
-      window.requestAnimationFrame(frame);
+    if (cpu.pc == 0x0100) {
+      console.log("running = false because hit 0x0100");
+      running = false;
+      lastTs = null;
+    }
+    if (running) {
+      frameId = window.requestAnimationFrame(frame);
+    } else {
+      frameId = null;
     }
   }
-  window.requestAnimationFrame(frame);
+  frameId = window.requestAnimationFrame(frame);
 
-  // console.log("starting execution");
-  // while (cpu.pc !== 0x0100) {
-  //   let cycles = step(cpu, bus);
-  //   for (; cycles; cycles--) {
-  //     ppuTick(ppu, bus);
-  //   }
-  // }
-  // console.log(dump(cpu));
+  return function() {
+    console.log("emulate stop called");
+    if (frameId != null) {
+      console.log("canceling frameId ", frameId);
+      window.cancelAnimationFrame(frameId);
+    }
+  }
+}
+
+export async function main (): Promise<void> {
+  console.log("jsgb initializing");
+  initScreen();
+  const bootRom = await loadBootRom();
+  const cart = cartBuild(await loadCart());
+  const screenContext = getScreenContext();
+
+  while (true) {
+    const stop = emulate(bootRom, cart, screenContext);
+    await new Promise<void>(function(resolve, _) {
+      const resetButton = document.getElementById("reset") as HTMLButtonElement;
+      resetButton.onclick = function() { 
+        console.log("reset clicked");
+        resolve();
+      };
+    });
+    stop();
+  }
 }
 
