@@ -12,33 +12,6 @@ import {hex8, hex16} from "./util";
 
 // http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf
 // https://gbdev.io/pandocs/
-const initScreen = function(): void {
-  // const screenCanvas = <HTMLCanvasElement>document.getElementById("screen");
-  // const screenWidth = screenCanvas.width;
-  // const screenHeight = screenCanvas.height;
-
-  // console.log("Got canvas " + screenWidth + "X" + screenHeight);
-
-  // const setPixel = function(image: ImageData, x: number, y: number, v: number): void {
-  //   const idxBase = 4*(160*y+x);
-  //   image.data[idxBase + 0] = v;
-  //   image.data[idxBase + 1] = v;
-  //   image.data[idxBase + 2] = v;
-  //   image.data[idxBase + 3] = 0xff;
-  // };
-
-  // const screenContext = screenCanvas.getContext("2d");
-  // if (screenContext === null) {
-  //   throw new Error("Could not get context");
-  // }
-  // const screenImage = screenContext.getImageData(0, 0, screenWidth, screenHeight);
-  // for (let y = 0; y < 144; y++) {
-  //   for (let x = 0; x < 160; x++) {
-  //     setPixel(screenImage, x, y, x == 0 || x == 159 || y == 0 || y == 143 ? 0x0 : 0xff);
-  //   }
-  // }
-  // screenContext.putImageData(screenImage, 0, 0);
-};
 
 const loadBootRom = async function(): Promise<Uint8Array> {
   // https://gbdev.gg8.se/wiki/articles/Gameboy_Bootstrap_ROM
@@ -64,39 +37,51 @@ const getScreenContext = function(): CanvasRenderingContext2D {
   return screenContext;
 }
 
-const updateDebugInfo = function(cpu: CPU, bus: Bus, cycleCount: number): void {
+const updateDebugInfo = function(cpu: CPU, bus: Bus, cycleCount: number, runState: RunState): void {
   const debugDiv = window.document.getElementById("debug");
   if (debugDiv === null) {
     throw new Error("debug div missing");
   }
-  debugDiv.innerHTML = `PC = 0x${hex16(cpu.pc)}<br/>` +
-    `SP = 0x${hex16(cpu.regs.sp)}<br/>` +
-    `A = 0x${hex8(cpu.regs.a)}<br/>` +
-    `F = 0x${hex8(cpu.regs.f)}<br/>` +
-    `B = 0x${hex8(cpu.regs.b)}<br/>` +
-    `C = 0x${hex8(cpu.regs.c)}<br/>` +
-    `D = 0x${hex8(cpu.regs.d)}<br/>` +
-    `E = 0x${hex8(cpu.regs.e)}<br/>` +
-    `H = 0x${hex8(cpu.regs.h)}<br/>` +
-    `L = 0x${hex8(cpu.regs.l)}<br/>` +
-    `cycle = ${cycleCount}<br/>` +
+  debugDiv.innerHTML = "" + 
+    `PC = 0x${hex16(cpu.pc)}\n` +
+    `SP = 0x${hex16(cpu.regs.sp)}\n` +
+    `A = 0x${hex8(cpu.regs.a)}\n` +
+    `F = 0x${hex8(cpu.regs.f)}\n` +
+    `B = 0x${hex8(cpu.regs.b)}\n` +
+    `C = 0x${hex8(cpu.regs.c)}\n` +
+    `D = 0x${hex8(cpu.regs.d)}\n` +
+    `E = 0x${hex8(cpu.regs.e)}\n` +
+    `H = 0x${hex8(cpu.regs.h)}\n` +
+    `L = 0x${hex8(cpu.regs.l)}\n` +
+    `cycle = ${cycleCount}\n` +
+    `state = ${RunState[runState]}\n` +
     "";
-    // `LCDC = 0x${hex16(bus.read(0xff40))}<br/>` +
-    // `STAT = 0x${hex16(bus.read(0xff41))}<br/>` +
-    // `LY = 0x${hex16(bus.read(0xff44))}<br/>` +
-    // `LYC = 0x${hex16(bus.read(0xff45))}<br/>` +
-    // `SCX = 0x${hex16(bus.read(0xff43))}<br/>` +
-    // `SCY = 0x${hex16(bus.read(0xff42))}<br/>` +
-    // `WY = 0x${hex16(bus.read(0xff4a))}<br/>` +
-    // `WX = 0x${hex16(bus.read(0xff4b))}<br/>` +
-    // `IE = 0x${hex16(bus.read(0xffff))}<br/>` +
-    // `IF = 0x${hex16(bus.read(0xff0f))}<br/>` +
+    // `LCDC = 0x${hex16(bus.read(0xff40))}\n` +
+    // `STAT = 0x${hex16(bus.read(0xff41))}\n` +
+    // `LY = 0x${hex16(bus.read(0xff44))}\n` +
+    // `LYC = 0x${hex16(bus.read(0xff45))}\n` +
+    // `SCX = 0x${hex16(bus.read(0xff43))}\n` +
+    // `SCY = 0x${hex16(bus.read(0xff42))}\n` +
+    // `WY = 0x${hex16(bus.read(0xff4a))}\n` +
+    // `WX = 0x${hex16(bus.read(0xff4b))}\n` +
+    // `IE = 0x${hex16(bus.read(0xffff))}\n` +
+    // `IF = 0x${hex16(bus.read(0xff0f))}\n` +
 
 }
 
-function emulate(bootRom: Uint8Array, cart: Cart, screenContext: CanvasRenderingContext2D): (() => void) {
+enum RunState {
+  Stopped,
+  Running
+}
+
+interface EmulatorHandle {
+  terminate(): void;
+  run(): void;
+}
+
+function startEmulator(bootRom: Uint8Array, cart: Cart, screenContext: CanvasRenderingContext2D): EmulatorHandle {
   console.log("emulate()");
-  let running = true; 
+  let runState = RunState.Stopped;
   const cpu = initCPU();
   const ppu = ppuBuild();
   const audio = audioInit();
@@ -128,47 +113,62 @@ function emulate(bootRom: Uint8Array, cart: Cart, screenContext: CanvasRendering
     }
     renderScreen(screenContext, ppu);
     // screenContext.fillText(`PC = 0x${hex16(cpu.pc)}`, 10, 100);
-    updateDebugInfo(cpu, bus, cycleCount);
+    updateDebugInfo(cpu, bus, cycleCount, runState);
     if (cpu.pc == 0x0100) {
       console.log("running = false because hit 0x0100");
-      running = false;
+      runState = RunState.Stopped;
       lastTs = null;
     }
-    if (running) {
+    if (runState == RunState.Running) {
       lastTs = ts;
       frameId = window.requestAnimationFrame(frame);
     } else {
       frameId = null;
     }
   }
-  frameId = window.requestAnimationFrame(frame);
+  updateDebugInfo(cpu, bus, cycleCount, runState);
+  // if (runState == RunState.Running) {
+  //   frameId = window.requestAnimationFrame(frame);
+  // }
 
-  return function() {
-    console.log("emulate stop called");
+  function terminate() {
+    console.log("emulate terminate called");
     if (frameId != null) {
       console.log("canceling frameId ", frameId);
       window.cancelAnimationFrame(frameId);
     }
   }
+  function run() {
+    console.log("run handle");
+    if (runState == RunState.Running) return;
+    if (lastTs !== null) {
+      console.log("logic bug: was not running yet lastTs was not null!");
+    }
+    runState = RunState.Running;
+    window.requestAnimationFrame(frame);
+  }
+  return {terminate, run};
 }
 
 export async function main (): Promise<void> {
   console.log("jsgb initializing");
-  initScreen();
   const bootRom = await loadBootRom();
   const cart = cartBuild(await loadCart());
   const screenContext = getScreenContext();
+  const resetButton = document.getElementById("reset") as HTMLButtonElement;
+  const runButton = document.getElementById("run") as HTMLButtonElement;
 
   while (true) {
-    const stop = emulate(bootRom, cart, screenContext);
+    const handle = startEmulator(bootRom, cart, screenContext);
+
+    runButton.onclick = function() { handle.run(); }
     await new Promise<void>(function(resolve, _) {
-      const resetButton = document.getElementById("reset") as HTMLButtonElement;
       resetButton.onclick = function() { 
         console.log("reset clicked");
         resolve();
       };
     });
-    stop();
+    handle.terminate();
   }
 }
 
