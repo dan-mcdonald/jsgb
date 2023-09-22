@@ -4,7 +4,7 @@ import { BusRead, BusWrite } from "../src/bus";
 import buildBus from "../src/buildBus";
 import { readFile } from "fs/promises";
 import { cartBuild } from "../src/cart";
-import { ppuBuild, ppuTick } from "../src/ppu";
+import * as PPU from "../src/ppu";
 import { audioInit } from "../src/audio";
 import { load as bessLoad } from "../src/bess";
 
@@ -96,14 +96,14 @@ describe("bootrom", (): void => {
     const cpu = initCPU();
     const bootRom = await loadBootRom();
     const cart = cartBuild(await loadCart());
-    const ppu = ppuBuild();
+    const ppu = PPU.ppuBuild();
     const audio = audioInit();
   
     const bus = buildBus(bootRom, cart, ppu, audio);
     while (cpu.pc !== 0x0100) {
       const cycles = step(cpu, bus);
       for(let i = 0; i < cycles; i++) {
-        ppuTick(ppu, bus);
+        PPU.tick(ppu, bus);
       }
     }
     const bess = bessLoad(await readFile("test/fixtures/bootend.sna"));

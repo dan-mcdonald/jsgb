@@ -1,11 +1,10 @@
 "use strict";
 
-import type {CPU} from "./cpu";
 import type {Bus} from "./bus";
 
-import {initCPU, step} from "./cpu";
+import * as CPU from "./cpu";
 import buildBus from "./buildBus";
-import { ppuTick, ppuBuild, renderScreen } from "./ppu";
+import * as PPU from "./ppu";
 import { audioInit } from "./audio";
 import {Cart, cartBuild} from "./cart";
 import {hex8, hex16} from "./util";
@@ -37,7 +36,7 @@ const getScreenContext = function(): CanvasRenderingContext2D {
   return screenContext;
 }
 
-const updateDebugInfo = function(cpu: CPU, bus: Bus, cycleCount: number, runState: RunState): void {
+const updateDebugInfo = function(cpu: CPU.CPU, bus: Bus, cycleCount: number, runState: RunState): void {
   const debugDiv = window.document.getElementById("debug");
   if (debugDiv === null) {
     throw new Error("debug div missing");
@@ -71,19 +70,21 @@ const updateDebugInfo = function(cpu: CPU, bus: Bus, cycleCount: number, runStat
 
 enum RunState {
   Stopped,
-  Running
+  Running,
+  Step,
 }
 
 interface EmulatorHandle {
   terminate(): void;
   run(): void;
+  step(): void;
 }
 
 function startEmulator(bootRom: Uint8Array, cart: Cart, screenContext: CanvasRenderingContext2D): EmulatorHandle {
   console.log("emulate()");
   let runState = RunState.Stopped;
-  const cpu = initCPU();
-  const ppu = ppuBuild();
+  const cpu = CPU.initCPU();
+  const ppu = PPU.ppuBuild();
   const audio = audioInit();
   const bus = buildBus(bootRom, cart, ppu, audio);
 
@@ -95,6 +96,18 @@ function startEmulator(bootRom: Uint8Array, cart: Cart, screenContext: CanvasRen
   let lastTs: DOMHighResTimeStamp | null = null;
 
   function frame(ts: DOMHighResTimeStamp) {
+    console.log("frame() runState =", RunState[runState]);
+    if (runState == RunState.Step) {
+      const cycles = CPU.step(cpu, bus);
+      cycleCount += cycles;
+      for(let i = 0; i < cycles; i++) {
+        PPU.tick(ppu, bus);
+      }
+      PPU.renderScreen(screenContext, ppu);
+      updateDebugInfo(cpu, bus, cycleCount, runState);  
+      runState = RunState.Stopped;
+      return;
+    }
     if (lastTs == null) {
       lastTs = ts;
       window.requestAnimationFrame(frame);
@@ -104,15 +117,14 @@ function startEmulator(bootRom: Uint8Array, cart: Cart, screenContext: CanvasRen
     
     let frameCycles = 0;
     while(frameCycles < targetCycles && cpu.pc != 0x0100) {
-      const cycles = step(cpu, bus);
+      const cycles = CPU.step(cpu, bus);
       cycleCount += cycles;
       frameCycles += cycles;
       for(let i = 0; i < cycles; i++) {
-        ppuTick(ppu, bus);
+        PPU.tick(ppu, bus);
       }
     }
-    renderScreen(screenContext, ppu);
-    // screenContext.fillText(`PC = 0x${hex16(cpu.pc)}`, 10, 100);
+    PPU.renderScreen(screenContext, ppu);
     updateDebugInfo(cpu, bus, cycleCount, runState);
     if (cpu.pc == 0x0100) {
       console.log("running = false because hit 0x0100");
@@ -147,7 +159,11 @@ function startEmulator(bootRom: Uint8Array, cart: Cart, screenContext: CanvasRen
     runState = RunState.Running;
     window.requestAnimationFrame(frame);
   }
-  return {terminate, run};
+  function step() {
+    runState = RunState.Step;
+    window.requestAnimationFrame(frame);
+  }
+  return {terminate, run, step};
 }
 
 export async function main (): Promise<void> {
@@ -157,11 +173,13 @@ export async function main (): Promise<void> {
   const screenContext = getScreenContext();
   const resetButton = document.getElementById("reset") as HTMLButtonElement;
   const runButton = document.getElementById("run") as HTMLButtonElement;
+  const stepButton = document.getElementById("step") as HTMLButtonElement;
 
   while (true) {
     const handle = startEmulator(bootRom, cart, screenContext);
 
     runButton.onclick = function() { handle.run(); }
+    stepButton.onclick = function() { handle.step(); }
     await new Promise<void>(function(resolve, _) {
       resetButton.onclick = function() { 
         console.log("reset clicked");

@@ -245,7 +245,7 @@ function drawPixel(ppu: PPU, x: number): void {
   setPixel(ppu, x, y, calcScreenPixel(ppu, x, y));
 }
 
-export function ppuTick(ppu: PPU, bus: Bus): void {
+export function tick(ppu: PPU, bus: Bus): void {
   ppu.lineDot++;
 
   const dmaSrcAddr = getDMASrcAddr(ppu);
