@@ -135,6 +135,7 @@ function emulate(bootRom: Uint8Array, cart: Cart, screenContext: CanvasRendering
       lastTs = null;
     }
     if (running) {
+      lastTs = ts;
       frameId = window.requestAnimationFrame(frame);
     } else {
       frameId = null;
