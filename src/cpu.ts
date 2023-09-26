@@ -176,9 +176,11 @@ function get16(cpu: CPU, reg: R16): number {
   }
 }
 
-function ld_r16_n16(cpu: CPU, target: R16, val: number): number {
-  set16(cpu, target, val);
-  return 4;
+function ld_r16_n16(target: R16, val: number): InstructionFunction {
+  return function(cpu: CPU, _: Bus): number {
+    set16(cpu, target, val);
+    return 12;
+  }
 }
 
 function ld_at_r16_r8(destAddrReg: R16, valReg: R8): (cpu: CPU, bus: Bus) => number {
@@ -281,6 +283,13 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
           return 8;
         },
       };
+    case 0x11:
+      n16 = decodeImm16();
+      return {
+        length,
+        text: "ld   de," + hex16(n16),
+        exec: ld_r16_n16(R16.DE, n16),
+      };
     case 0x20:
       n8 = decodeImm8();
       jaddr = addr + length + u8tos8(n8);
@@ -301,14 +310,14 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
       return {
         length,
         text: "ld   hl," + hex16(n16),
-        exec: (cpu: CPU) => ld_r16_n16(cpu, R16.HL, n16),
+        exec: ld_r16_n16(R16.HL, n16),
       };
     case 0x31:
       n16 = decodeImm16();
       return {
         length,
         text: "ld   sp," + hex16(n16),
-        exec: (cpu: CPU) => ld_r16_n16(cpu, R16.SP, n16),
+        exec: ld_r16_n16(R16.SP, n16),
       };
     case 0x32:
       return {
