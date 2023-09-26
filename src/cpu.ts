@@ -327,6 +327,13 @@ function push16(cpu: CPU, bus: Bus, val: number): void {
   bus.writeb(cpu.regs.sp, hi);
 }
 
+function push_r16(reg: R16): InstructionFunction {
+  return function(cpu: CPU, bus: Bus): number {
+    push16(cpu, bus, get16(cpu, reg));
+    return 16;
+  }
+}
+
 function call(addr: number): InstructionFunction {
   return function(cpu: CPU, bus: Bus) {
     push16(cpu, bus, cpu.pc);
@@ -376,6 +383,16 @@ function jr_addr(addr: number): InstructionFunction {
   }
 }
 
+function rl_r8(reg: R8): InstructionFunction {
+  return function(cpu: CPU, _: Bus): number {
+    const oldVal = get8(cpu, reg);
+    const newVal = ((oldVal << 1) | (cpu.f.C() ? 1 : 0)) & 0xff;
+    set8(cpu, reg, newVal & 0xff);
+    cpu.f = cpu.f.setZ(newVal === 0).setN(false).setH(false).setC((oldVal & 0x80) !== 0);
+    return 8;
+  }
+}
+
 export function decodeInsn(addr: number, bus: Bus): Instruction {
   let length = 0;
   function decodeImm8(): number {
@@ -393,6 +410,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
   function decodeCbInsn(): Instruction {
     const opcode = bus.readb(addr + length++);
     switch (opcode) {
+      case 0x11:
+        return {
+          length,
+          text: "rl   c",
+          exec: rl_r8(R8.C),
+        };
       case 0x7c:
         return {
           length,
@@ -641,6 +664,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "xor  a",
         exec: (cpu: CPU) => xor(cpu, "a"),
+      };
+    case 0xC5:
+      return {
+        length,
+        text: "push bc",
+        exec: push_r16(R16.BC),
       };
     case 0xCB:
       return decodeCbInsn();
