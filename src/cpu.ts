@@ -119,8 +119,9 @@ enum R16 {
   AF,
   BC,
   DE,
-  SP,
   HL,
+  SP,
+  PC,
 }
 
 enum R8 {
@@ -183,6 +184,9 @@ function set16(cpu: CPU, target: R16, val: number): void {
     case R16.SP:
       cpu.regs.sp = val;
       break;
+    case R16.PC:
+      cpu.pc = val;
+      break;
     case R16.AF:
       cpu.regs.a = val >> 8;
       cpu.f = new Flags(val & 0xff);
@@ -210,11 +214,13 @@ function get16(cpu: CPU, reg: R16): number {
       return cpu.regs.b << 8 | cpu.regs.c;
     case R16.DE:
       return cpu.regs.d << 8 | cpu.regs.e;
-    case R16.SP:
-      return cpu.regs.sp;
     case R16.HL:
       return cpu.regs.h << 8 | cpu.regs.l;
-  }
+    case R16.SP:
+      return cpu.regs.sp;
+    case R16.PC:
+      return cpu.pc;
+    }
 }
 
 function ld_r16_n16(target: R16, val: number): InstructionFunction {
@@ -711,6 +717,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "push bc",
         exec: push_r16(R16.BC),
       };
+    case 0xC9:
+      return {
+        length,
+        text: "ret  ",
+        exec: pop_r16(R16.PC),
+      }
     case 0xCB:
       return decodeCbInsn();
     case 0xCD:
