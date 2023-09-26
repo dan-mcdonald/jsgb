@@ -396,6 +396,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "NOP",
         exec: () => 4
       };
+    case 0x04:
+      return {
+        length,
+        text: "inc  b",
+        exec: inc_r8(R8.B),
+      };
     case 0x05:
       return {
         length,
