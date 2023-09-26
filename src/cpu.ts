@@ -1,5 +1,5 @@
 import { Bus } from "./bus";
-import { hex8, hex16, u8tos8, break16 } from "./util";
+import { hex8, hex16, u8tos8, make16, break16 } from "./util";
 import { interruptVector, interruptPending, clearInterrupt } from "./interrupt";
 
 type InstructionFunction = (cpu: CPU, bus: Bus) => number;
@@ -183,9 +183,22 @@ function set16(cpu: CPU, target: R16, val: number): void {
     case R16.SP:
       cpu.regs.sp = val;
       break;
+    case R16.AF:
+      cpu.regs.a = val >> 8;
+      cpu.f = new Flags(val & 0xff);
+      break;
+    case R16.BC:
+      cpu.regs.b = val >> 8;
+      cpu.regs.c = val & 0xff;
+      break;
+    case R16.DE:
+      cpu.regs.d = val >> 8;
+      cpu.regs.e = val & 0xff;
+      break;
     case R16.HL:
       cpu.regs.h = val >> 8;
       cpu.regs.l = val & 0xff;
+      break;
   }
 }
 
@@ -325,6 +338,21 @@ function push16(cpu: CPU, bus: Bus, val: number): void {
   cpu.regs.sp -= 2;
   bus.writeb(cpu.regs.sp + 1, lo);
   bus.writeb(cpu.regs.sp, hi);
+}
+
+function pop16(cpu: CPU, bus: Bus): number {
+  const hi = bus.readb(cpu.regs.sp);
+  const lo = bus.readb(cpu.regs.sp + 1);
+  cpu.regs.sp += 2;
+  return make16(hi, lo);
+}
+
+function pop_r16(reg: R16): InstructionFunction {
+  return function(cpu: CPU, bus: Bus): number {
+    const val = pop16(cpu, bus);
+    set16(cpu, reg, val);
+    return 16;
+  }
 }
 
 function push_r16(reg: R16): InstructionFunction {
@@ -670,6 +698,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "xor  a",
         exec: (cpu: CPU) => xor(cpu, "a"),
+      };
+    case 0xC1:
+      return {
+        length,
+        text: "pop  bc",
+        exec: pop_r16(R16.BC),
       };
     case 0xC5:
       return {
