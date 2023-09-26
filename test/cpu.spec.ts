@@ -24,6 +24,10 @@ describe("decodeInsn", (): void => {
     { bytes: [0xE2], disasm: "ld   (ff00+c),a" },
     { bytes: [0x0C], disasm: "inc  c" },
     { bytes: [0x3E, 0xF3], disasm: "ld   a,F3" },
+    { bytes: [0xE2], disasm: "ld   (ff00+c),a" },
+    { bytes: [0x32], disasm: "ldd  (hl),a" },
+    { bytes: [0x3E, 0x77], disasm: "ld   a,77" },
+    { bytes: [0x77], disasm: "ld   (hl),a" },
   ];
   const writeb = () => { };
   let baseAddr = 0x0000;
