@@ -1,5 +1,5 @@
 import { Bus } from "./bus";
-import { hex8, hex16 } from "./util";
+import { hex8, hex16, u8tos8 } from "./util";
 import { interruptVector, interruptPending, clearInterrupt } from "./interrupt";
 
 export class Flags extends Number {
@@ -21,19 +21,19 @@ export class Flags extends Number {
   }
   Z(): boolean {
     const n = this.valueOf();
-    return (n & maskZ) != 0;
+    return (n & maskZ) !== 0;
   }
   N(): boolean {
     const n = this.valueOf();
-    return (n & maskN) != 0;
+    return (n & maskN) !== 0;
   }
   H(): boolean {
     const n = this.valueOf();
-    return (n & maskH) != 0;
+    return (n & maskH) !== 0;
   }
   C(): boolean {
     const n = this.valueOf();
-    return (n & maskC) != 0;
+    return (n & maskC) !== 0;
   }
 }
 
@@ -174,21 +174,61 @@ function ldd_at_r16_r8(cpu: CPU, bus: Bus, destAddrReg: R16, val: R8): number {
   return 8;
 }
 
+
 export function decodeInsn(addr: number, bus: Bus): Instruction {
-  const opcode = bus.readb(addr);
-  let length = 1;
+  let length = 0;
+  function decodeImm8(): number {
+    return bus.readb(addr + length++);
+  }
   function decodeImm16(): number {
     const lo = bus.readb(addr + length++);
     const hi = bus.readb(addr + length++);
     return (hi << 8) | lo;
   }
+  const opcode = decodeImm8();
   let n16: number;
+  let n8: number;
+  let jaddr: number;
+  function decodeCbInsn(): Instruction {
+    const opcode = bus.readb(addr + length++);
+    switch (opcode) {
+      case 0x7c:
+        return {
+          length,
+          text: "bit  7,h",
+          exec: (cpu: CPU) => {
+            cpu.f = cpu.f
+              .setZ((cpu.regs.h & 0x80) === 0)
+              .setN(false)
+              .setH(true);
+            return 8;
+          }
+        };
+      default:
+        throw Error(`unrecognized opcode cb ${hex8(opcode)}`);
+    }
+  }
   switch (opcode) {
     case 0x00:
       return {
         length,
         text: "NOP",
         exec: () => 4
+      };
+    case 0x20:
+      n8 = decodeImm8();
+      jaddr = addr + length + u8tos8(n8);
+      return {
+        length,
+        text: "jr   nz," + hex16(jaddr),
+        exec: (cpu: CPU) => {
+          const targetAddr = jaddr; // put address in closure
+          if (!cpu.f.Z()) {
+            cpu.pc = targetAddr;
+            return 12;
+          }
+          return 8;
+        },
       };
     case 0x21:
       n16 = decodeImm16();
@@ -210,6 +250,8 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ldd  (hl),a",
         exec: (cpu: CPU) => ldd_at_r16_r8(cpu, bus, R16.HL, R8.A),
       }
+    case 0xCB:
+      return decodeCbInsn();
     case 0xAF:
       return {
         length,
