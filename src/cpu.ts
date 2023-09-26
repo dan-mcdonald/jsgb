@@ -2,6 +2,8 @@ import { Bus } from "./bus";
 import { hex8, hex16, u8tos8, break16 } from "./util";
 import { interruptVector, interruptPending, clearInterrupt } from "./interrupt";
 
+type InstructionFunction = (cpu: CPU, bus: Bus) => number;
+
 export class Flags extends Number {
   setZ(b: boolean): Flags {
     const n = this.valueOf();
@@ -251,7 +253,14 @@ function ldd_at_r16_r8(destAddrReg: R16, val: R8): (cpu: CPU, bus: Bus) => numbe
   };
 }
 
-type InstructionFunction = (cpu: CPU, bus: Bus) => number;
+function ldi_at_r16_r8(destAddrReg: R16, val: R8): (cpu: CPU, bus: Bus) => number {
+  return function(cpu: CPU, bus: Bus): number {
+    ld_at_r16_r8(destAddrReg, val)(cpu, bus);
+    inc_r16(destAddrReg);
+    return 8;
+  };
+}
+
 
 function ld_r8_r8(dest: R8, src: R8): InstructionFunction {
   return function(cpu: CPU, _: Bus): number {
@@ -412,6 +421,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "ld   hl," + hex16(n16),
         exec: ld_r16_n16(R16.HL, n16),
+      };
+    case 0x22:
+      return {
+        length,
+        text: "ldi  (hl),a",
+        exec: ldi_at_r16_r8(R16.HL, R8.A),
       };
     case 0x31:
       n16 = decodeImm16();
