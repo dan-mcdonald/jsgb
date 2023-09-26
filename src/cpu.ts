@@ -285,16 +285,25 @@ function ld_r8_n8(dest: R8, val: number): InstructionFunction {
   };
 }
 
-function inc_r8(reg: R8): (cpu: CPU, bus: Bus) => number {
+function inc_r8(reg: R8): InstructionFunction {
   return function(cpu: CPU, _: Bus) {
     const oldVal = get8(cpu, reg);
     const newVal = (oldVal + 1) & 0xff;
-    cpu.regs.a = newVal;
+    set8(cpu, reg, newVal);
     cpu.f = cpu.f.setZ(newVal === 0).setN(false).setH((oldVal & 0xf) == 0xf);
     return 4;
   }
 }
 
+function dec_r8(reg: R8): InstructionFunction {
+  return function(cpu: CPU, _: Bus) {
+    const oldVal = get8(cpu, reg);
+    const newVal = (oldVal - 1) & 0xff;
+    set8(cpu, reg, newVal);
+    cpu.f = cpu.f.setZ(newVal === 0).setN(false).setH((oldVal & 0xf) == 0xf);
+    return 4;
+  }
+}
 function push16(cpu: CPU, bus: Bus, val: number): void {
   const [hi, lo] = break16(val);
   cpu.regs.sp -= 2;
@@ -357,6 +366,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "NOP",
         exec: () => 4
+      };
+    case 0x05:
+      return {
+        length,
+        text: "dec  b",
+        exec: dec_r8(R8.B),
       };
     case 0x06:
       n8 = decodeImm8();
