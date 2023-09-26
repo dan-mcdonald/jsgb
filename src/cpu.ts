@@ -1,5 +1,5 @@
 import { Bus } from "./bus";
-import { hex8, hex16, u8tos8 } from "./util";
+import { hex8, hex16, u8tos8, break16 } from "./util";
 import { interruptVector, interruptPending, clearInterrupt } from "./interrupt";
 
 export class Flags extends Number {
@@ -262,6 +262,21 @@ function inc_r8(reg: R8): (cpu: CPU, bus: Bus) => number {
   }
 }
 
+function push16(cpu: CPU, bus: Bus, val: number): void {
+  const [hi, lo] = break16(val);
+  cpu.regs.sp -= 2;
+  bus.writeb(cpu.regs.sp + 1, lo);
+  bus.writeb(cpu.regs.sp, hi);
+}
+
+function call(addr: number): InstructionFunction {
+  return function(cpu: CPU, bus: Bus) {
+    push16(cpu, bus, cpu.pc);
+    cpu.pc = addr;
+    return 12;
+  }
+}
+
 export function decodeInsn(addr: number, bus: Bus): Instruction {
   let length = 0;
   function decodeImm8(): number {
@@ -382,13 +397,20 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ld   (hl),a",
         exec: ld_at_r16_r8(R16.HL, R8.A),
       };
-    case 0xCB:
-      return decodeCbInsn();
     case 0xAF:
       return {
         length,
         text: "xor  a",
         exec: (cpu: CPU) => xor(cpu, "a"),
+      };
+    case 0xCB:
+      return decodeCbInsn();
+    case 0xCD:
+      n16 = decodeImm16();
+      return {
+        length,
+        text: "call " + hex16(n16),
+        exec: call(n16),
       };
     case 0xE0:
       n8 = decodeImm8();
