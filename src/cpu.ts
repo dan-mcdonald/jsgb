@@ -485,6 +485,13 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "jr   z," + hex16(jaddr),
         exec: jr_cond_addr(cond_z, jaddr),
       };
+    case 0x2E:
+      n8 = decodeImm8();
+      return {
+        length,
+        text: "ld   l," + hex8(n8),
+        exec: ld_r8_n8(R8.L, n8),
+      };
     case 0x31:
       n16 = decodeImm16();
       return {
