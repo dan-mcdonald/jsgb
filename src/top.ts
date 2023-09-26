@@ -116,9 +116,9 @@ function startEmulator(bootRom: Uint8Array, cart: Cart, screenContext: CanvasRen
         PPU.tick(ppu, bus);
       }
       PPU.renderScreen(screenContext, ppu);
+      runState = RunState.Stopped;
       updateDebugInfo(cpu, bus, cycleCount, runState);
       updateDisasm(cpu, bus);
-      runState = RunState.Stopped;
       return;
     }
     if (lastTs == null) {
