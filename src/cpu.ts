@@ -349,6 +349,13 @@ function jr_cond_addr(cond: (cpu: CPU) => boolean, addr: number): InstructionFun
   }
 }
 
+function jr_addr(addr: number): InstructionFunction {
+  return function(cpu: CPU, _: Bus): number {
+    cpu.pc = addr;
+    return 12;
+  }
+}
+
 export function decodeInsn(addr: number, bus: Bus): Instruction {
   let length = 0;
   function decodeImm8(): number {
@@ -436,6 +443,14 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "inc  de",
         exec: inc_r16(R16.DE)
+      };
+    case 0x18:
+      n8 = decodeImm8();
+      jaddr = addr + length + u8tos8(n8);
+      return {
+        length,
+        text: "jr   " + hex16(jaddr),
+        exec: jr_addr(jaddr),
       };
     case 0x1A:
       return {
