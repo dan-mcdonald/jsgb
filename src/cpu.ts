@@ -114,18 +114,39 @@ function xor(cpu: CPU, reg: keyof Registers): number {
 }
 
 enum R16 {
+  AF,
+  BC,
+  DE,
   SP,
   HL,
 }
 
 enum R8 {
   A,
+  B,
+  C,
+  D,
+  E,
+  H,
+  L,
 }
 
 function get8(cpu: CPU, reg: R8): number {
   switch(reg) {
     case R8.A:
       return cpu.regs.a;
+    case R8.B:
+      return cpu.regs.b;
+    case R8.C:
+      return cpu.regs.c;
+    case R8.D:
+      return cpu.regs.d;
+    case R8.E:
+      return cpu.regs.e;
+    case R8.H:
+      return cpu.regs.h;
+    case R8.L:
+      return cpu.regs.l;
   }
 }
 
@@ -142,6 +163,12 @@ function set16(cpu: CPU, target: R16, val: number): void {
 
 function get16(cpu: CPU, reg: R16): number {
   switch(reg) {
+    case R16.AF:
+      return cpu.regs.a << 8 | cpu.f.valueOf();
+    case R16.BC:
+      return cpu.regs.b << 8 | cpu.regs.c;
+    case R16.DE:
+      return cpu.regs.d << 8 | cpu.regs.e;
     case R16.SP:
       return cpu.regs.sp;
     case R16.HL:
@@ -174,6 +201,15 @@ function ldd_at_r16_r8(cpu: CPU, bus: Bus, destAddrReg: R16, val: R8): number {
   return 8;
 }
 
+function inc_r8(reg: R8): (cpu: CPU, bus: Bus) => number {
+  return function(cpu: CPU, _: Bus) {
+    const oldVal = get8(cpu, reg);
+    const newVal = (oldVal + 1) & 0xff;
+    cpu.regs.a = newVal;
+    cpu.f = cpu.f.setZ(newVal === 0).setN(false).setH((oldVal & 0xf) == 0xf);
+    return 4;
+  }
+}
 
 export function decodeInsn(addr: number, bus: Bus): Instruction {
   let length = 0;
@@ -215,6 +251,22 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "NOP",
         exec: () => 4
       };
+    case 0x0C:
+      return {
+        length,
+        text: "inc  c",
+        exec: inc_r8(R8.C),
+      };
+    case 0x0E:
+      n8 = decodeImm8();
+      return {
+        length,
+        text: "ld   c," + hex8(n8),
+        exec: (cpu: CPU) => {
+          cpu.regs.c = n8;
+          return 8;
+        },
+      };
     case 0x20:
       n8 = decodeImm8();
       jaddr = addr + length + u8tos8(n8);
@@ -250,6 +302,16 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ldd  (hl),a",
         exec: (cpu: CPU) => ldd_at_r16_r8(cpu, bus, R16.HL, R8.A),
       }
+    case 0x3E:
+      n8 = decodeImm8();
+      return {
+        length,
+        text: "ld   a," + hex8(n8),
+        exec: (cpu: CPU) => {
+          cpu.regs.a = n8;
+          return 8;
+        },
+      };
     case 0xCB:
       return decodeCbInsn();
     case 0xAF:
@@ -257,6 +319,16 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "xor  a",
         exec: (cpu: CPU) => xor(cpu, "a"),
+      };
+    case 0xE2:
+      return {
+        length,
+        text: "ld   (ff00+c),a",
+        exec: (cpu: CPU) => {
+          const addr = 0xff00 + cpu.regs.c;
+          bus.writeb(addr, cpu.regs.a);
+          return 8;
+        },
       };
     default:
       throw Error(`unrecognized opcode ${hex8(opcode)}`);

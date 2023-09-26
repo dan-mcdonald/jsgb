@@ -18,6 +18,12 @@ describe("decodeInsn", (): void => {
     { bytes: [0xCB, 0x7C], disasm: "bit  7,h" },
     { bytes: [0x20, 0xFB], disasm: "jr   nz,0007" },
     { bytes: [0x21, 0x26, 0xFF], disasm: "ld   hl,FF26" },
+    { bytes: [0x0E, 0x11], disasm: "ld   c,11" },
+    { bytes: [0x3E, 0x80], disasm: "ld   a,80" },
+    { bytes: [0x32], disasm: "ldd  (hl),a" },
+    { bytes: [0xE2], disasm: "ld   (ff00+c),a" },
+    { bytes: [0x0C], disasm: "inc  c" },
+    { bytes: [0x3E, 0xF3], disasm: "ld   a,F3" },
   ];
   const writeb = () => { };
   let baseAddr = 0x0000;
