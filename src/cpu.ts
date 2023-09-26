@@ -376,12 +376,23 @@ function call(addr: number): InstructionFunction {
   }
 }
 
-function cp(val: number): InstructionFunction {
+function cp(cpu: CPU, val: number): void {
+  const diff = ((cpu.regs.a - val) & 0xff);
+  cpu.f = cpu.f.setZ(diff == 0).setN(true).setH(false).setC(val > cpu.regs.a);
+}
+
+function cp_n8(val: number): InstructionFunction {
   return function(cpu: CPU, _: Bus): number {
-    const diff = ((cpu.regs.a - val) & 0xff);
-    cpu.f = cpu.f.setZ(diff == 0).setN(true).setH(false).setC(val > cpu.regs.a);
+    cp(cpu, val);
     return 4;
   }
+}
+
+function cp_at_HL(cpu: CPU, bus: Bus): number {
+  const addr = get16(cpu, R16.HL);
+  const val = bus.readb(addr);
+  cp(cpu, val);
+  return 8;
 }
 
 function sub(reg: R8): InstructionFunction {
@@ -705,6 +716,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "xor  a",
         exec: (cpu: CPU) => xor(cpu, "a"),
       };
+    case 0xBE:
+      return {
+        length,
+        text: "cp   (hl)",
+        exec: cp_at_HL,
+      };
     case 0xC1:
       return {
         length,
@@ -768,7 +785,7 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
       return {
         length,
         text: "cp   a," + hex8(n8),
-        exec: cp(n8),
+        exec: cp_n8(n8),
       };
     default:
       throw Error(`unrecognized opcode ${hex8(opcode)}`);
