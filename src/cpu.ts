@@ -500,7 +500,9 @@ export function step(cpu: CPU, bus: Bus): number {
       return 4;
     }
     const insn = decodeInsn(cpu.pc, bus);
-    return insn.exec(cpu, bus);
+    const cycles = insn.exec(cpu, bus);
+    cpu.pc += insn.length;
+    return cycles;
     // let nn;
     // let i8;
     // let jaddr;
