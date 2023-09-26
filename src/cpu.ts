@@ -407,6 +407,21 @@ function sub(reg: R8): InstructionFunction {
   }
 }
 
+function add(cpu: CPU, val: number): void {
+  // A = A + val
+  const oldA = cpu.regs.a;
+  const newA = (oldA + val) & 0xff;
+  cpu.regs.a = newA;
+  cpu.f = cpu.f.setZ(newA == 0).setN(false).setH((oldA&0xf) + (val&0xf) > 0xf).setC(oldA + val > 0xff);  
+}
+
+function add_at_HL(cpu: CPU, bus: Bus): number {
+  const addr = get16(cpu, R16.HL);
+  const val = bus.readb(addr);
+  add(cpu, val);
+  return 8;
+}
+
 function cond_z(cpu: CPU): boolean {
   return cpu.f.Z();
 }
@@ -715,6 +730,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "ld   a,l",
         exec: ld_r8_r8(R8.A,R8.L),
+      };
+    case 0x86:
+      return {
+        length,
+        text: "add  (hl)",
+        exec: add_at_HL,
       };
     case 0x90:
       return {
