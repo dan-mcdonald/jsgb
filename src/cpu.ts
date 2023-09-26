@@ -408,6 +408,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "inc  c",
         exec: inc_r8(R8.C),
       };
+    case 0x0D:
+      return {
+        length,
+        text: "dec  c",
+        exec: dec_r8(R8.C),
+      };
     case 0x0E:
       n8 = decodeImm8();
       return {
