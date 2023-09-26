@@ -294,6 +294,14 @@ function call(addr: number): InstructionFunction {
   }
 }
 
+function cp(val: number): InstructionFunction {
+  return function(cpu: CPU, _: Bus): number {
+    const diff = ((cpu.regs.a - val) & 0xff);
+    cpu.f = cpu.f.setZ(diff == 0).setN(true).setH(false).setC(val > cpu.regs.a);
+    return 4;
+  }
+}
+
 export function decodeInsn(addr: number, bus: Bus): Instruction {
   let length = 0;
   function decodeImm8(): number {
@@ -457,6 +465,13 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
           bus.writeb(addr, cpu.regs.a);
           return 8;
         },
+      };
+    case 0xFE:
+      n8 = decodeImm8();
+      return {
+        length,
+        text: "cp   a," + hex8(n8),
+        exec: cp(n8),
       };
     default:
       throw Error(`unrecognized opcode ${hex8(opcode)}`);
