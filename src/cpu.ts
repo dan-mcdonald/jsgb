@@ -519,6 +519,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "inc  hl",
         exec: inc_r16(R16.HL),
       };
+    case 0x24:
+      return {
+        length,
+        text: "inc  h",
+        exec: inc_r8(R8.H),
+      };
     case 0x28:
       n8 = decodeImm8();
       jaddr = addr + length + u8tos8(n8);
