@@ -41,11 +41,11 @@ const updateDebugInfo = function(cpu: CPU.CPU, bus: Bus, cycleCount: number, run
   if (debugDiv === null) {
     throw new Error("debug div missing");
   }
-  debugDiv.innerHTML = "" + 
+  debugDiv.innerText = "" + 
     `PC = 0x${hex16(cpu.pc)}\n` +
     `SP = 0x${hex16(cpu.regs.sp)}\n` +
     `A = 0x${hex8(cpu.regs.a)}\n` +
-    `F = 0x${hex8(cpu.regs.f)}\n` +
+    `F = 0x${hex8(cpu.f.valueOf())}\n` +
     `B = 0x${hex8(cpu.regs.b)}\n` +
     `C = 0x${hex8(cpu.regs.c)}\n` +
     `D = 0x${hex8(cpu.regs.d)}\n` +
@@ -65,7 +65,20 @@ const updateDebugInfo = function(cpu: CPU.CPU, bus: Bus, cycleCount: number, run
     // `WX = 0x${hex16(bus.read(0xff4b))}\n` +
     // `IE = 0x${hex16(bus.read(0xffff))}\n` +
     // `IF = 0x${hex16(bus.read(0xff0f))}\n` +
+}
 
+function updateDisasm(cpu: CPU.CPU, bus: Bus): void {
+  const disasmDiv = window.document.getElementById("disasm") as HTMLDivElement;
+  let insnAddr = cpu.pc;
+  let text = "";
+  for(let i = 0; i < 10; i++) {
+    const insn = CPU.decodeInsn(insnAddr, bus);
+    const marker = insnAddr == cpu.pc ? "->" : "  ";
+    const line = `${marker} ${hex16(insnAddr)}: ${insn.text}\n`;
+    insnAddr += insn.length;
+    text += line;
+  }
+  disasmDiv.innerText = text;
 }
 
 enum RunState {
@@ -96,7 +109,6 @@ function startEmulator(bootRom: Uint8Array, cart: Cart, screenContext: CanvasRen
   let lastTs: DOMHighResTimeStamp | null = null;
 
   function frame(ts: DOMHighResTimeStamp) {
-    console.log("frame() runState =", RunState[runState]);
     if (runState == RunState.Step) {
       const cycles = CPU.step(cpu, bus);
       cycleCount += cycles;
@@ -104,7 +116,8 @@ function startEmulator(bootRom: Uint8Array, cart: Cart, screenContext: CanvasRen
         PPU.tick(ppu, bus);
       }
       PPU.renderScreen(screenContext, ppu);
-      updateDebugInfo(cpu, bus, cycleCount, runState);  
+      updateDebugInfo(cpu, bus, cycleCount, runState);
+      updateDisasm(cpu, bus);
       runState = RunState.Stopped;
       return;
     }
@@ -126,6 +139,7 @@ function startEmulator(bootRom: Uint8Array, cart: Cart, screenContext: CanvasRen
     }
     PPU.renderScreen(screenContext, ppu);
     updateDebugInfo(cpu, bus, cycleCount, runState);
+    updateDisasm(cpu, bus);
     if (cpu.pc == 0x0100) {
       console.log("running = false because hit 0x0100");
       runState = RunState.Stopped;

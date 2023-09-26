@@ -3,11 +3,11 @@ export function hex(n: number): string {
 }
 
 export function hex8(n: number): string {
-  return hex(n).padStart(2, '0');
+  return hex(n).padStart(2, '0').toUpperCase();
 }
 
 export function hex16(n: number): string {
-  return hex(n).padStart(4, '0');
+  return hex(n).padStart(4, '0').toUpperCase();
 }
 
 export function u8tos8(u8: number): number {
