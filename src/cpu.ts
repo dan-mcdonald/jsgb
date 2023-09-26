@@ -1104,8 +1104,8 @@ export function step(cpu: CPU, bus: Bus): number {
       return 4;
     }
     const insn = decodeInsn(cpu.pc, bus);
-    const cycles = insn.exec(cpu, bus);
     cpu.pc += insn.length;
+    const cycles = insn.exec(cpu, bus);
     return cycles;
     // let nn;
     // let i8;
