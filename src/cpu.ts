@@ -253,6 +253,14 @@ function ldd_at_r16_r8(destAddrReg: R16, val: R8): (cpu: CPU, bus: Bus) => numbe
 
 type InstructionFunction = (cpu: CPU, bus: Bus) => number;
 
+function ld_r8_r8(dest: R8, src: R8): InstructionFunction {
+  return function(cpu: CPU, _: Bus): number {
+    const val = get8(cpu, src);
+    set8(cpu, dest, val);
+    return 4;
+  };
+}
+
 function ld_at_n8_r8(destAddr: number, fromReg: R8): InstructionFunction {
   return function(cpu: CPU, bus: Bus): number {
     const val = get8(cpu, fromReg);
@@ -411,6 +419,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "ld   (hl),a",
         exec: ld_at_r16_r8(R16.HL, R8.A),
+      };
+    case 0x7B:
+      return {
+        length,
+        text: "ld   a,e",
+        exec: ld_r8_r8(R8.A, R8.E)
       };
     case 0xAF:
       return {
