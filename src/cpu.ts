@@ -489,7 +489,7 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
           }
         };
       default:
-        throw Error(`unrecognized opcode cb ${hex8(opcode)}`);
+        throw Error(`unrecognized opcode cb ${hex8(opcode)} at ${hex16(addr)}`);
     }
   }
   switch (opcode) {
@@ -821,7 +821,7 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         exec: cp_n8(n8),
       };
     default:
-      throw Error(`unrecognized opcode ${hex8(opcode)}`);
+      throw Error(`unrecognized opcode ${hex8(opcode)} at ${hex16(addr)}`);
   }
 }
 
