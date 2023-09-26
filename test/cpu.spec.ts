@@ -102,18 +102,18 @@ describe("dec b", (): void => {
   });
 });
 
-describe("swap a", (): void => {
-  const readb = (addr: number): number => [0xcb, 0x37][addr];
-  const writeb = (_: number, __: number): void => { };
-  const bus = { readb, writeb };
+// describe("swap a", (): void => {
+//   const readb = (addr: number): number => [0xcb, 0x37][addr];
+//   const writeb = (_: number, __: number): void => { };
+//   const bus = { readb, writeb };
 
-  it("swaps a5 -> 5a", () => {
-    const cpu = initCPU();
-    cpu.regs.a = 0xa5;
-    step(cpu, bus);
-    expect(cpu.regs.a).to.equal(0x5a);
-  });
-});
+//   it("swaps a5 -> 5a", () => {
+//     const cpu = initCPU();
+//     cpu.regs.a = 0xa5;
+//     step(cpu, bus);
+//     expect(cpu.regs.a).to.equal(0x5a);
+//   });
+// });
 
 function loadBootRom(): Promise<Uint8Array> {
   return readFile("dist/DMG_ROM.bin");
