@@ -234,6 +234,15 @@ function dec_r16(cpu: CPU, reg: R16): number {
   return 4;
 }
 
+function inc_r16(reg: R16): InstructionFunction {
+  return function(cpu: CPU, _: Bus): number {
+    const oldVal = get16(cpu, reg);
+    const newVal = (oldVal + 1) & 0xffff;
+    set16(cpu, reg, newVal);
+    return 8;
+  };
+}
+
 function ldd_at_r16_r8(destAddrReg: R16, val: R8): (cpu: CPU, bus: Bus) => number {
   return function(cpu: CPU, bus: Bus): number {
     ld_at_r16_r8(destAddrReg, val)(cpu, bus);
@@ -339,6 +348,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "ld   de," + hex16(n16),
         exec: ld_r16_n16(R16.DE, n16),
+      };
+    case 0x13:
+      return {
+        length,
+        text: "inc  de",
+        exec: inc_r16(R16.DE)
       };
     case 0x1A:
       return {
