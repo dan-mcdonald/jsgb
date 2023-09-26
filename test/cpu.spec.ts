@@ -3,50 +3,62 @@ import { expect } from 'chai';
 import { BusRead, BusWrite } from "../src/bus";
 import buildBus from "../src/buildBus";
 import { readFile } from "fs/promises";
+import { readFileSync } from "fs";
 import { cartBuild } from "../src/cart";
 import * as PPU from "../src/ppu";
 import { audioInit } from "../src/audio";
 import { load as bessLoad } from "../src/bess";
 import { hex16, hex8 } from "../src/util";
+import { EOL } from "os";
+
+function loadDecodeInsnTestCases(): { addr: number, bytes: number[], disasm: string }[] {
+  const disasmContent = readFileSync("test/fixtures/bootrom_text.S", {encoding: "utf-8"});
+  function lineToTestCase(line: string): { addr: number, bytes: number[], disasm: string } {
+    const addr = parseInt(line.slice(5, 9), 16);
+    const bytes = line.slice(10, 26).split(" ").filter((s) => s.length > 0).map((b) => parseInt(b, 16));
+    const disasm = line.slice(27);
+    return {addr, bytes, disasm};
+  }
+  return disasmContent.split(EOL).filter((line) => line.length > 0).map(lineToTestCase);
+}
 
 describe("decodeInsn", (): void => {
-  const testCases: { bytes: number[], disasm: string }[] = [
-    { bytes: [0x31, 0xfe, 0xff], disasm: "ld   sp,FFFE" },
-    { bytes: [0xaf], disasm: "xor  a" },
-    { bytes: [0x21, 0xFF, 0x9F], disasm: "ld   hl,9FFF" },
-    { bytes: [0x32], disasm: "ldd  (hl),a" },
-    { bytes: [0xCB, 0x7C], disasm: "bit  7,h" },
-    { bytes: [0x20, 0xFB], disasm: "jr   nz,0007" },
-    { bytes: [0x21, 0x26, 0xFF], disasm: "ld   hl,FF26" },
-    { bytes: [0x0E, 0x11], disasm: "ld   c,11" },
-    { bytes: [0x3E, 0x80], disasm: "ld   a,80" },
-    { bytes: [0x32], disasm: "ldd  (hl),a" },
-    { bytes: [0xE2], disasm: "ld   (ff00+c),a" },
-    { bytes: [0x0C], disasm: "inc  c" },
-    { bytes: [0x3E, 0xF3], disasm: "ld   a,F3" },
-    { bytes: [0xE2], disasm: "ld   (ff00+c),a" },
-    { bytes: [0x32], disasm: "ldd  (hl),a" },
-    { bytes: [0x3E, 0x77], disasm: "ld   a,77" },
-    { bytes: [0x77], disasm: "ld   (hl),a" },
-    { bytes: [0x3E, 0xFC], disasm: "ld   a,FC" },
-    { bytes: [0xE0, 0x47], disasm: "ld   (ff00+47),a" },
-  ];
+  const testCases = loadDecodeInsnTestCases();
+  // [
+  //   { bytes: [0x31, 0xfe, 0xff], disasm: "ld   sp,FFFE" },
+  //   { bytes: [0xaf], disasm: "xor  a" },
+  //   { bytes: [0x21, 0xFF, 0x9F], disasm: "ld   hl,9FFF" },
+  //   { bytes: [0x32], disasm: "ldd  (hl),a" },
+  //   { bytes: [0xCB, 0x7C], disasm: "bit  7,h" },
+  //   { bytes: [0x20, 0xFB], disasm: "jr   nz,0007" },
+  //   { bytes: [0x21, 0x26, 0xFF], disasm: "ld   hl,FF26" },
+  //   { bytes: [0x0E, 0x11], disasm: "ld   c,11" },
+  //   { bytes: [0x3E, 0x80], disasm: "ld   a,80" },
+  //   { bytes: [0x32], disasm: "ldd  (hl),a" },
+  //   { bytes: [0xE2], disasm: "ld   (ff00+c),a" },
+  //   { bytes: [0x0C], disasm: "inc  c" },
+  //   { bytes: [0x3E, 0xF3], disasm: "ld   a,F3" },
+  //   { bytes: [0xE2], disasm: "ld   (ff00+c),a" },
+  //   { bytes: [0x32], disasm: "ldd  (hl),a" },
+  //   { bytes: [0x3E, 0x77], disasm: "ld   a,77" },
+  //   { bytes: [0x77], disasm: "ld   (hl),a" },
+  //   { bytes: [0x3E, 0xFC], disasm: "ld   a,FC" },
+  //   { bytes: [0xE0, 0x47], disasm: "ld   (ff00+47),a" },
+  //   { bytes: 11 04 01         ld   de,0104},
+  // ];
   const writeb = () => { };
-  let baseAddr = 0x0000;
   for (const testCase of testCases) {
     const byteText = testCase.bytes.map(hex8).join(" ");
-    const baseAddrClosure = baseAddr;
     const readb = (addr: number) => {
-      if (addr < baseAddrClosure || addr >= baseAddrClosure + testCase.bytes.length) {
+      if (addr < testCase.addr || addr >= testCase.addr + testCase.bytes.length) {
         throw Error(`read for address ${hex16(addr)} out of range`);
       }
-      return testCase.bytes[addr - baseAddrClosure];
+      return testCase.bytes[addr - testCase.addr];
     }
     const bus = { readb, writeb };
-    it(hex16(baseAddrClosure) + ": " + byteText + " => " + testCase.disasm, () => {
-      expect(decodeInsn(baseAddrClosure, bus).text).to.equal(testCase.disasm)
+    it(hex16(testCase.addr) + ": " + byteText + " => " + testCase.disasm, () => {
+      expect(decodeInsn(testCase.addr, bus).text).to.equal(testCase.disasm)
     })
-    baseAddr += testCase.bytes.length;
   }
 });
 
