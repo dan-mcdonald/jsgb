@@ -24,28 +24,6 @@ function loadDecodeInsnTestCases(): { addr: number, bytes: number[], disasm: str
 
 describe("decodeInsn", (): void => {
   const testCases = loadDecodeInsnTestCases();
-  // [
-  //   { bytes: [0x31, 0xfe, 0xff], disasm: "ld   sp,FFFE" },
-  //   { bytes: [0xaf], disasm: "xor  a" },
-  //   { bytes: [0x21, 0xFF, 0x9F], disasm: "ld   hl,9FFF" },
-  //   { bytes: [0x32], disasm: "ldd  (hl),a" },
-  //   { bytes: [0xCB, 0x7C], disasm: "bit  7,h" },
-  //   { bytes: [0x20, 0xFB], disasm: "jr   nz,0007" },
-  //   { bytes: [0x21, 0x26, 0xFF], disasm: "ld   hl,FF26" },
-  //   { bytes: [0x0E, 0x11], disasm: "ld   c,11" },
-  //   { bytes: [0x3E, 0x80], disasm: "ld   a,80" },
-  //   { bytes: [0x32], disasm: "ldd  (hl),a" },
-  //   { bytes: [0xE2], disasm: "ld   (ff00+c),a" },
-  //   { bytes: [0x0C], disasm: "inc  c" },
-  //   { bytes: [0x3E, 0xF3], disasm: "ld   a,F3" },
-  //   { bytes: [0xE2], disasm: "ld   (ff00+c),a" },
-  //   { bytes: [0x32], disasm: "ldd  (hl),a" },
-  //   { bytes: [0x3E, 0x77], disasm: "ld   a,77" },
-  //   { bytes: [0x77], disasm: "ld   (hl),a" },
-  //   { bytes: [0x3E, 0xFC], disasm: "ld   a,FC" },
-  //   { bytes: [0xE0, 0x47], disasm: "ld   (ff00+47),a" },
-  //   { bytes: 11 04 01         ld   de,0104},
-  // ];
   const writeb = () => { };
   for (const testCase of testCases) {
     const byteText = testCase.bytes.map(hex8).join(" ");

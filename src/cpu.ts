@@ -150,6 +150,32 @@ function get8(cpu: CPU, reg: R8): number {
   }
 }
 
+function set8(cpu: CPU, reg: R8, val: number): void {
+  switch(reg) {
+    case R8.A:
+      cpu.regs.a = val;
+      break;
+    case R8.B:
+      cpu.regs.b = val;
+      break;
+    case R8.C:
+      cpu.regs.c = val;
+      break;
+    case R8.D:
+      cpu.regs.d = val;
+      break;
+    case R8.E:
+      cpu.regs.e = val;
+      break;
+    case R8.H:
+      cpu.regs.h = val;
+      break;
+    case R8.L:
+      cpu.regs.l = val;
+      break;
+  }
+}
+
 function set16(cpu: CPU, target: R16, val: number): void {
   switch (target) {
     case R16.SP:
@@ -180,6 +206,15 @@ function ld_r16_n16(target: R16, val: number): InstructionFunction {
   return function(cpu: CPU, _: Bus): number {
     set16(cpu, target, val);
     return 12;
+  }
+}
+
+function ld_r8_at_r16(targetReg: R8, addrReg: R16): InstructionFunction {
+  return function(cpu: CPU, bus: Bus): number {
+    const addr = get16(cpu, addrReg);
+    const val = bus.readb(addr);
+    set8(cpu, targetReg, val);
+    return 8;
   }
 }
 
@@ -289,6 +324,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "ld   de," + hex16(n16),
         exec: ld_r16_n16(R16.DE, n16),
+      };
+    case 0x1A:
+      return {
+        length,
+        text: "ld   a,(de)",
+        exec: ld_r8_at_r16(R8.A, R16.DE),
       };
     case 0x20:
       n8 = decodeImm8();
