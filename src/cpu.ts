@@ -335,6 +335,20 @@ function cp(val: number): InstructionFunction {
   }
 }
 
+function cond_z(cpu: CPU): boolean {
+  return cpu.f.Z();
+}
+
+function jr_cond_addr(cond: (cpu: CPU) => boolean, addr: number): InstructionFunction {
+  return function(cpu: CPU, _: Bus): number {
+    if (cond(cpu)) {
+      cpu.pc = addr;
+      return 12;
+    }
+    return 8;
+  }
+}
+
 export function decodeInsn(addr: number, bus: Bus): Instruction {
   let length = 0;
   function decodeImm8(): number {
@@ -456,6 +470,14 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "inc  hl",
         exec: inc_r16(R16.HL),
+      };
+    case 0x28:
+      n8 = decodeImm8();
+      jaddr = addr + length + u8tos8(n8);
+      return {
+        length,
+        text: "jr   z," + hex16(jaddr),
+        exec: jr_cond_addr(cond_z, jaddr),
       };
     case 0x31:
       n16 = decodeImm16();
