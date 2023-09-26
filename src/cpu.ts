@@ -593,6 +593,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ld   a,e",
         exec: ld_r8_r8(R8.A, R8.E)
       };
+    case 0x7C:
+      return {
+        length,
+        text: "ld   a,h",
+        exec: ld_r8_r8(R8.A, R8.H),
+      };
     case 0xAF:
       return {
         length,
