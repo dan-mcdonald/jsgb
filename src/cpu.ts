@@ -343,6 +343,18 @@ function cp(val: number): InstructionFunction {
   }
 }
 
+function sub(reg: R8): InstructionFunction {
+  return function(cpu: CPU, _: Bus): number {
+    // A = A - r
+    const oldA = cpu.regs.a;
+    const r = get8(cpu, reg);
+    const newA = (oldA - r) & 0xff;
+    cpu.regs.a = newA;
+    cpu.f = cpu.f.setZ(newA == 0).setN(true).setH((oldA & 0xf) < (r & 0xf)).setC(oldA < r);
+    return 4;
+  }
+}
+
 function cond_z(cpu: CPU): boolean {
   return cpu.f.Z();
 }
@@ -599,6 +611,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ld   a,h",
         exec: ld_r8_r8(R8.A, R8.H),
       };
+    case 0x90:
+      return {
+        length,
+        text: "sub  b",
+        exec: sub(R8.B),
+      }
     case 0xAF:
       return {
         length,
