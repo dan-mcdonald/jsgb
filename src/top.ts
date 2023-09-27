@@ -12,14 +12,14 @@ import {hex8, hex16} from "./util";
 // http://marc.rawer.de/Gameboy/Docs/GBCPUman.pdf
 // https://gbdev.io/pandocs/
 
-const loadBootRom = async function(): Promise<Uint8Array> {
+export async function loadBootRom(): Promise<Uint8Array> {
   // https://gbdev.gg8.se/wiki/articles/Gameboy_Bootstrap_ROM
   const resp = await fetch("DMG_ROM.bin")
   const buf = await resp.arrayBuffer();
   return new Uint8Array(buf);
-};
+}
 
-const loadCart = async function(): Promise<Uint8Array> {
+export async function loadCart(): Promise<Uint8Array> {
   const resp = await fetch("game.gb");
   const buf = await resp.arrayBuffer();
   return new Uint8Array(buf);
@@ -182,7 +182,6 @@ function startEmulator(bootRom: Uint8Array, cart: Cart, screenContext: CanvasRen
 }
 
 export async function main (): Promise<void> {
-  console.log("jsgb initializing");
   const bootRom = await loadBootRom();
   const cart = cartBuild(await loadCart());
   const screenContext = getScreenContext();
