@@ -5,6 +5,7 @@
     "lib": ["es2022"],
     "moduleResolution": "bundler",
     "strict": true,
+    "jsx": "react",
   },
   "ts-node": {
     "compilerOptions": {

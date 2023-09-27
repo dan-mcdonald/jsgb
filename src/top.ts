@@ -153,6 +153,7 @@ function startEmulator(bootRom: Uint8Array, cart: Cart, screenContext: CanvasRen
     }
   }
   updateDebugInfo(cpu, bus, cycleCount, runState);
+  updateDisasm(cpu, bus);
   // if (runState == RunState.Running) {
   //   frameId = window.requestAnimationFrame(frame);
   // }
@@ -194,6 +195,12 @@ export async function main (): Promise<void> {
 
     runButton.onclick = function() { handle.run(); }
     stepButton.onclick = function() { handle.step(); }
+    window.document.onkeydown = function(e: KeyboardEvent): void {
+      if (e.code == "F3") {
+        handle.step();
+        e.preventDefault(); // prevent browser from opening search box
+      }
+    }
     await new Promise<void>(function(resolve, _) {
       resetButton.onclick = function() { 
         console.log("reset clicked");
