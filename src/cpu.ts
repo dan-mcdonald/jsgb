@@ -103,7 +103,7 @@ export function dump(cpu: CPU): string {
   return `pc ${hex16(cpu.pc)} sp ${hex16(cpu.regs.sp)} af ${hex8(cpu.regs.a)}${hex8(cpu.f.valueOf())} bc ${hex8(cpu.regs.b)}${hex8(cpu.regs.c)} de ${hex8(cpu.regs.d)}${hex8(cpu.regs.e)} hl ${hex8(cpu.regs.h)}${hex8(cpu.regs.l)}`;
 }
 
-interface Instruction {
+export interface Instruction {
   length: number;
   text: string;
   exec(cpu: CPU, bus: Bus): number;
