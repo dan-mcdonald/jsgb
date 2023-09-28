@@ -135,7 +135,7 @@ enum R8 {
 }
 
 function get8(cpu: CPU, reg: R8): number {
-  switch(reg) {
+  switch (reg) {
     case R8.A:
       return cpu.regs.a;
     case R8.B:
@@ -154,7 +154,7 @@ function get8(cpu: CPU, reg: R8): number {
 }
 
 function set8(cpu: CPU, reg: R8, val: number): void {
-  switch(reg) {
+  switch (reg) {
     case R8.A:
       cpu.regs.a = val;
       break;
@@ -207,7 +207,7 @@ function set16(cpu: CPU, target: R16, val: number): void {
 }
 
 function get16(cpu: CPU, reg: R16): number {
-  switch(reg) {
+  switch (reg) {
     case R16.AF:
       return cpu.regs.a << 8 | cpu.f.valueOf();
     case R16.BC:
@@ -220,18 +220,18 @@ function get16(cpu: CPU, reg: R16): number {
       return cpu.regs.sp;
     case R16.PC:
       return cpu.pc;
-    }
+  }
 }
 
 function ld_r16_n16(target: R16, val: number): InstructionFunction {
-  return function(cpu: CPU, _: Bus): number {
+  return function (cpu: CPU, _: Bus): number {
     set16(cpu, target, val);
     return 12;
   }
 }
 
 function ld_r8_at_r16(targetReg: R8, addrReg: R16): InstructionFunction {
-  return function(cpu: CPU, bus: Bus): number {
+  return function (cpu: CPU, bus: Bus): number {
     const addr = get16(cpu, addrReg);
     const val = bus.readb(addr);
     set8(cpu, targetReg, val);
@@ -240,7 +240,7 @@ function ld_r8_at_r16(targetReg: R8, addrReg: R16): InstructionFunction {
 }
 
 function ld_r8_at_n8(targetReg: R8, addr: number): InstructionFunction {
-  return function(cpu: CPU, bus: Bus): number {
+  return function (cpu: CPU, bus: Bus): number {
     const val = bus.readb(addr);
     set8(cpu, targetReg, val);
     return 8;
@@ -248,18 +248,18 @@ function ld_r8_at_n8(targetReg: R8, addr: number): InstructionFunction {
 }
 
 function ld_at_r16_r8(destAddrReg: R16, valReg: R8): (cpu: CPU, bus: Bus) => number {
-  return function(cpu: CPU, bus: Bus): number {
+  return function (cpu: CPU, bus: Bus): number {
     const destAddr = get16(cpu, destAddrReg);
     const val = get8(cpu, valReg);
-    bus.writeb(destAddr, val);  
+    bus.writeb(destAddr, val);
     return 8;
   }
 }
 
 function ld_at_n16_r8(destAddr: number, valReg: R8): (cpu: CPU, bus: Bus) => number {
-  return function(cpu: CPU, bus: Bus): number {
+  return function (cpu: CPU, bus: Bus): number {
     const val = get8(cpu, valReg);
-    bus.writeb(destAddr, val);  
+    bus.writeb(destAddr, val);
     return 8;
   }
 }
@@ -272,7 +272,7 @@ function dec_r16(cpu: CPU, reg: R16): number {
 }
 
 function inc_r16(reg: R16): InstructionFunction {
-  return function(cpu: CPU, _: Bus): number {
+  return function (cpu: CPU, _: Bus): number {
     const oldVal = get16(cpu, reg);
     const newVal = (oldVal + 1) & 0xffff;
     set16(cpu, reg, newVal);
@@ -281,7 +281,7 @@ function inc_r16(reg: R16): InstructionFunction {
 }
 
 function ldd_at_r16_r8(destAddrReg: R16, val: R8): (cpu: CPU, bus: Bus) => number {
-  return function(cpu: CPU, bus: Bus): number {
+  return function (cpu: CPU, bus: Bus): number {
     ld_at_r16_r8(destAddrReg, val)(cpu, bus);
     dec_r16(cpu, destAddrReg);
     return 8;
@@ -289,7 +289,7 @@ function ldd_at_r16_r8(destAddrReg: R16, val: R8): (cpu: CPU, bus: Bus) => numbe
 }
 
 function ldi_at_r16_r8(destAddrReg: R16, val: R8): (cpu: CPU, bus: Bus) => number {
-  return function(cpu: CPU, bus: Bus): number {
+  return function (cpu: CPU, bus: Bus): number {
     ld_at_r16_r8(destAddrReg, val)(cpu, bus);
     inc_r16(destAddrReg);
     return 8;
@@ -298,7 +298,7 @@ function ldi_at_r16_r8(destAddrReg: R16, val: R8): (cpu: CPU, bus: Bus) => numbe
 
 
 function ld_r8_r8(dest: R8, src: R8): InstructionFunction {
-  return function(cpu: CPU, _: Bus): number {
+  return function (cpu: CPU, _: Bus): number {
     const val = get8(cpu, src);
     set8(cpu, dest, val);
     return 4;
@@ -306,7 +306,7 @@ function ld_r8_r8(dest: R8, src: R8): InstructionFunction {
 }
 
 function ld_at_n8_r8(destAddr: number, fromReg: R8): InstructionFunction {
-  return function(cpu: CPU, bus: Bus): number {
+  return function (cpu: CPU, bus: Bus): number {
     const val = get8(cpu, fromReg);
     bus.writeb(destAddr, val);
     return 8;
@@ -314,14 +314,14 @@ function ld_at_n8_r8(destAddr: number, fromReg: R8): InstructionFunction {
 }
 
 function ld_r8_n8(dest: R8, val: number): InstructionFunction {
-  return function(cpu: CPU, _: Bus): number {
+  return function (cpu: CPU, _: Bus): number {
     set8(cpu, dest, val);
     return 8;
   };
 }
 
 function inc_r8(reg: R8): InstructionFunction {
-  return function(cpu: CPU, _: Bus) {
+  return function (cpu: CPU, _: Bus) {
     const oldVal = get8(cpu, reg);
     const newVal = (oldVal + 1) & 0xff;
     set8(cpu, reg, newVal);
@@ -331,7 +331,7 @@ function inc_r8(reg: R8): InstructionFunction {
 }
 
 function dec_r8(reg: R8): InstructionFunction {
-  return function(cpu: CPU, _: Bus) {
+  return function (cpu: CPU, _: Bus) {
     const oldVal = get8(cpu, reg);
     const newVal = (oldVal - 1) & 0xff;
     set8(cpu, reg, newVal);
@@ -354,7 +354,7 @@ function pop16(cpu: CPU, bus: Bus): number {
 }
 
 function pop_r16(reg: R16): InstructionFunction {
-  return function(cpu: CPU, bus: Bus): number {
+  return function (cpu: CPU, bus: Bus): number {
     const val = pop16(cpu, bus);
     set16(cpu, reg, val);
     return 16;
@@ -362,14 +362,14 @@ function pop_r16(reg: R16): InstructionFunction {
 }
 
 function push_r16(reg: R16): InstructionFunction {
-  return function(cpu: CPU, bus: Bus): number {
+  return function (cpu: CPU, bus: Bus): number {
     push16(cpu, bus, get16(cpu, reg));
     return 16;
   }
 }
 
 function call(addr: number): InstructionFunction {
-  return function(cpu: CPU, bus: Bus) {
+  return function (cpu: CPU, bus: Bus) {
     push16(cpu, bus, cpu.pc);
     cpu.pc = addr;
     return 12;
@@ -382,7 +382,7 @@ function cp(cpu: CPU, val: number): void {
 }
 
 function cp_n8(val: number): InstructionFunction {
-  return function(cpu: CPU, _: Bus): number {
+  return function (cpu: CPU, _: Bus): number {
     cp(cpu, val);
     return 4;
   }
@@ -396,7 +396,7 @@ function cp_at_HL(cpu: CPU, bus: Bus): number {
 }
 
 function sub(reg: R8): InstructionFunction {
-  return function(cpu: CPU, _: Bus): number {
+  return function (cpu: CPU, _: Bus): number {
     // A = A - r
     const oldA = cpu.regs.a;
     const r = get8(cpu, reg);
@@ -412,7 +412,7 @@ function add(cpu: CPU, val: number): void {
   const oldA = cpu.regs.a;
   const newA = (oldA + val) & 0xff;
   cpu.regs.a = newA;
-  cpu.f = cpu.f.setZ(newA == 0).setN(false).setH((oldA&0xf) + (val&0xf) > 0xf).setC(oldA + val > 0xff);  
+  cpu.f = cpu.f.setZ(newA == 0).setN(false).setH((oldA & 0xf) + (val & 0xf) > 0xf).setC(oldA + val > 0xff);
 }
 
 function add_at_HL(cpu: CPU, bus: Bus): number {
@@ -427,7 +427,7 @@ function cond_z(cpu: CPU): boolean {
 }
 
 function jr_cond_addr(cond: (cpu: CPU) => boolean, addr: number): InstructionFunction {
-  return function(cpu: CPU, _: Bus): number {
+  return function (cpu: CPU, _: Bus): number {
     if (cond(cpu)) {
       cpu.pc = addr;
       return 12;
@@ -437,14 +437,14 @@ function jr_cond_addr(cond: (cpu: CPU) => boolean, addr: number): InstructionFun
 }
 
 function jr_addr(addr: number): InstructionFunction {
-  return function(cpu: CPU, _: Bus): number {
+  return function (cpu: CPU, _: Bus): number {
     cpu.pc = addr;
     return 12;
   }
 }
 
 function rl_r8(reg: R8): InstructionFunction {
-  return function(cpu: CPU, _: Bus): number {
+  return function (cpu: CPU, _: Bus): number {
     const oldVal = get8(cpu, reg);
     const newVal = ((oldVal << 1) | (cpu.f.C() ? 1 : 0)) & 0xff;
     set8(cpu, reg, newVal & 0xff);
@@ -489,7 +489,15 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
           }
         };
       default:
-        throw Error(`unrecognized opcode cb ${hex8(opcode)} at ${hex16(addr)}`);
+        return {
+          length,
+          text: "undefined opcode",
+          exec: () => {
+            const opcodeClosure = opcode;
+            const addrClosure = addr;
+            throw Error(`unrecognized opcode cb ${hex8(opcodeClosure)} at ${hex16(addrClosure)}`);
+          }
+        };
     }
   }
   switch (opcode) {
@@ -729,7 +737,7 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
       return {
         length,
         text: "ld   a,l",
-        exec: ld_r8_r8(R8.A,R8.L),
+        exec: ld_r8_r8(R8.A, R8.L),
       };
     case 0x86:
       return {
@@ -787,7 +795,7 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
       return {
         length,
         text: "ld   (ff00+" + hex8(n8) + "),a",
-        exec: ld_at_n8_r8(0xff00+n8, R8.A),
+        exec: ld_at_n8_r8(0xff00 + n8, R8.A),
       };
     case 0xE2:
       return {
@@ -821,7 +829,15 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         exec: cp_n8(n8),
       };
     default:
-      throw Error(`unrecognized opcode ${hex8(opcode)} at ${hex16(addr)}`);
+      return {
+        length,
+        text: "undefined opcode",
+        exec: () => {
+          const opcodeClosure = opcode;
+          const addrClosure = addr;
+          throw Error(`unrecognized opcode ${hex8(opcodeClosure)} at ${hex16(addrClosure)}`);
+        }
+      }
   }
 }
 
