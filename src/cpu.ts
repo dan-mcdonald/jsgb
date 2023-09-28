@@ -115,7 +115,7 @@ function xor(cpu: CPU, reg: keyof Registers): number {
   return 4;
 }
 
-enum R16 {
+export enum R16 {
   AF,
   BC,
   DE,
@@ -347,13 +347,13 @@ function push16(cpu: CPU, bus: Bus, val: number): void {
 }
 
 function pop16(cpu: CPU, bus: Bus): number {
-  const hi = bus.readb(cpu.regs.sp);
+  const hi = bus.readb(cpu.regs.sp + 2);
   const lo = bus.readb(cpu.regs.sp + 1);
   cpu.regs.sp += 2;
   return make16(hi, lo);
 }
 
-function pop_r16(reg: R16): InstructionFunction {
+export function pop_r16(reg: R16): InstructionFunction {
   return function (cpu: CPU, bus: Bus): number {
     const val = pop16(cpu, bus);
     set16(cpu, reg, val);

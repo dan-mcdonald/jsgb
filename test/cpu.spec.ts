@@ -1,4 +1,4 @@
-import { Flags, initCPU, step, maskZ, decodeInsn } from "../src/cpu";
+import { Flags, initCPU, step, maskZ, decodeInsn, pop_r16, R16 } from "../src/cpu";
 import { expect } from 'chai';
 import { BusRead, BusWrite } from "../src/bus";
 import buildBus from "../src/buildBus";
@@ -99,6 +99,25 @@ describe("dec b", (): void => {
     cpu.regs.b = 1;
     expect(step(cpu, bus)).to.equal(4);
     expect(cpu.f.valueOf() & maskZ).to.equal(maskZ);
+  });
+});
+
+describe("pop bc", (): void => {
+  it("pops 0x04CE", (): void => {
+    const cpu = initCPU()
+    cpu.regs.sp = 0xfffa;
+    function readb(addr: number): number {
+      switch (addr) {
+        case 0xfffb: return 0xce;
+        case 0xfffc: return 0x04;
+        default: throw Error("unexpected readb addr: " + hex16(addr));
+      }
+    }
+    const writeb = (_: number, __: number): void => { };
+    pop_r16(R16.BC)(cpu, {readb, writeb});
+    expect(cpu.regs.b).to.equal(0x04);
+    expect(cpu.regs.c).to.equal(0xce);
+    expect(cpu.regs.sp).to.equal(0xfffc);
   });
 });
 
