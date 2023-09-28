@@ -17,7 +17,7 @@ interface DisasmInstruction {
   instruction: CPU.Instruction;
   addr: number;
   currentInsn: boolean;
-  // breakpoint: boolean;
+  breakpoint: boolean;
 }
 
 // https://layonez.medium.com/performant-animations-with-requestanimationframe-and-react-hooks-99a32c5c9fbf
@@ -62,17 +62,18 @@ export default function Emulator({ bootRomPromise, cartPromise }: { bootRomPromi
 
   const screenRef = useCallback((screenElem: HTMLCanvasElement | null) => {
     if (screenElem) {
-      const screenContext = screenElem.getContext("2d");
-      if (!screenContext) {
-        console.error("Could not get screen context");
-      } else {
-        screenContextRef.current = screenContext;
+      if (!screenContextRef.current) {
+        screenContextRef.current = screenElem.getContext("2d");
+        if (!screenContextRef.current) {
+          console.error("Could not get screen context");
+          return;
+        } 
+        PPU.renderScreen(screenContextRef.current, ppu);
       }
+    } else {
+      screenContextRef.current = null;
     }
-  }, []);
-
-
-  
+  }, [ppu]);
 
   const frameTime: MutableRefObject<null | DOMHighResTimeStamp> = useRef(null);
   function runFrame(time: DOMHighResTimeStamp) {
@@ -130,7 +131,17 @@ export default function Emulator({ bootRomPromise, cartPromise }: { bootRomPromi
   }
 
   function toggleBreakPoint() {
-    
+    const disasmAddr = disasmAddrRef.current;
+    console.log("toggleBreakPoint() while disasmAddrRef.current = ", disasmAddr);
+    if (disasmAddr === null) {
+      return;
+    }
+    const index = breakPoints.indexOf(disasmAddr);
+    if (index == -1) {
+      setBreakPoints([...breakPoints, disasmAddr]);
+    } else {
+      setBreakPoints(breakPoints.filter((_, i) => i != index));
+    }
   }
 
   function keyDown(e: KeyboardEvent) {
@@ -164,16 +175,22 @@ export default function Emulator({ bootRomPromise, cartPromise }: { bootRomPromi
     const instruction = CPU.decodeInsn(insnAddr, bus);
     const addr = insnAddr;
     const currentInsn = insnAddr == cpu.pc;
-    disasmInsns.push({ instruction, addr, currentInsn });
+    const breakpoint = breakPoints.includes(insnAddr);
+    disasmInsns.push({ instruction, addr, currentInsn, breakpoint });
     insnAddr += instruction.length;
   }
 
-  const disasmItems = disasmInsns.map((disasm) => (<option style={{ backgroundColor: disasm.currentInsn ? "blue" : "white", color: disasm.currentInsn ? "white" : "black" }} key={disasm.addr} value={disasm.addr}>{disasm.currentInsn ? "-> " : "   "}{hex16(disasm.addr)}: {disasm.instruction.text}</option>));
+  const styleBreakpoint = { backgroundColor: "red", color: "white" };
+  const styleCurrentInsn = { backgroundColor: "blue", color: "white" };
+  const styleDefault = { backgroundColor: "white", color: "black" };
+  const disasmItems = disasmInsns.map((disasm) => (<option style={disasm.breakpoint ? styleBreakpoint : disasm.currentInsn ? styleCurrentInsn : styleDefault} key={disasm.addr} value={disasm.addr}>{disasm.breakpoint ? "#" : "\xA0"}{disasm.currentInsn ? ">" : "\xA0"}{hex16(disasm.addr)}: {disasm.instruction.text}</option>));
 
   const disasmAddrRef = useRef<null | number>(null);
   function handleDisasmChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    console.log("handleDisasmChange() e = ", e);
+    console.log("e.target.value = ", e.target.value);
     const addr = parseInt(e.target.value);
-    disasmAddrRef.current = addr;
+    disasmAddrRef.current = Number.isNaN(addr) ? null : addr;
   }
 
   return (<div onKeyDown={keyDown}>
