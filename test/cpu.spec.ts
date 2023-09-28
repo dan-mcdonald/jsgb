@@ -1,4 +1,4 @@
-import { Flags, initCPU, step, maskZ, decodeInsn, pop_r16, R16 } from "../src/cpu";
+import { Flags, initCPU, step, maskZ, decodeInsn, pop_r16, R16, push_r16 } from "../src/cpu";
 import { expect } from 'chai';
 import { BusRead, BusWrite } from "../src/bus";
 import buildBus from "../src/buildBus";
@@ -118,6 +118,25 @@ describe("pop bc", (): void => {
     expect(cpu.regs.b).to.equal(0x04);
     expect(cpu.regs.c).to.equal(0xce);
     expect(cpu.regs.sp).to.equal(0xfffc);
+  });
+});
+
+describe("push bc", (): void => {
+  it("pushes 0x04CE", (): void => {
+    const cpu = initCPU()
+    cpu.regs.sp = 0xfffc;
+    cpu.regs.b = 0x04;
+    cpu.regs.c = 0xce;
+    function readb(_: number): number { throw new Error("unexpected readb"); }
+    const writeMap = new Map<number,number>();
+    const writeb = (addr: number, val: number): void => {
+      writeMap.set(addr, val);
+    };
+    push_r16(R16.BC)(cpu, {readb, writeb});
+    expect(cpu.regs.sp).to.equal(0xfffa);
+    expect(writeMap.get(0xfffc)).to.equal(0x04);
+    expect(writeMap.get(0xfffb)).to.equal(0xce);
+    expect(writeMap.size).to.equal(2);
   });
 });
 

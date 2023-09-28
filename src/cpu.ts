@@ -343,7 +343,7 @@ function push16(cpu: CPU, bus: Bus, val: number): void {
   const [hi, lo] = break16(val);
   cpu.regs.sp -= 2;
   bus.writeb(cpu.regs.sp + 1, lo);
-  bus.writeb(cpu.regs.sp, hi);
+  bus.writeb(cpu.regs.sp + 2, hi);
 }
 
 function pop16(cpu: CPU, bus: Bus): number {
@@ -361,7 +361,7 @@ export function pop_r16(reg: R16): InstructionFunction {
   }
 }
 
-function push_r16(reg: R16): InstructionFunction {
+export function push_r16(reg: R16): InstructionFunction {
   return function (cpu: CPU, bus: Bus): number {
     push16(cpu, bus, get16(cpu, reg));
     return 16;
