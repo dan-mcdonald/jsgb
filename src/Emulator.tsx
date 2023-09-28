@@ -48,6 +48,18 @@ function useAnimationFrame(nextAnimationFrameHandler: FrameRequestCallback, shou
   }, [shouldAnimate]);
 }
 
+// const debugifyBus(bus: Bus): Bus {
+//   const readb = function(addr: number): number {
+//     const val = bus.readb(addr);
+//     if (addr >= 0xff80) {
+//       console.log(`readb ${hex16(addr)} => ${hex8(val)}`);
+//     }
+//     return val;
+//   }
+//   const writeb = bus.writeb;
+//   return {readb, writeb};
+// }
+
 export default function Emulator({ bootRomPromise, cartPromise }: { bootRomPromise: Promise<Uint8Array>, cartPromise: Promise<Uint8Array> }) {
   const bootRom = use(bootRomPromise);
   const cart = use(cartPromise);
@@ -55,7 +67,7 @@ export default function Emulator({ bootRomPromise, cartPromise }: { bootRomPromi
   const [cpu, setCpu] = useState(CPU.initCPU());
   const [ppu, setPpu] = useState(PPU.ppuBuild());
   const audio = audioInit();
-  const bus = buildBus(bootRom, cartBuild(cart), ppu, audio);
+  const [bus, setBus] = useState(buildBus(bootRom, cartBuild(cart), ppu, audio));
   const [cycleCount, setCycleCount] = useState(0);
   const [breakPoints, setBreakPoints] = useState<number[]>([0x0100]);
   const screenContextRef: MutableRefObject<null | CanvasRenderingContext2D> = useRef(null);
@@ -99,7 +111,8 @@ export default function Emulator({ bootRomPromise, cartPromise }: { bootRomPromi
         }
       }
       setCycleCount(cycleCount + frameCycles);
-
+      setCpu(cpu);
+      setBus(bus);
       if(screenContextRef.current) {
         PPU.renderScreen(screenContextRef.current, ppu);
       }
@@ -187,10 +200,17 @@ export default function Emulator({ bootRomPromise, cartPromise }: { bootRomPromi
 
   const disasmAddrRef = useRef<null | number>(null);
   function handleDisasmChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    console.log("handleDisasmChange() e = ", e);
-    console.log("e.target.value = ", e.target.value);
     const addr = parseInt(e.target.value);
     disasmAddrRef.current = Number.isNaN(addr) ? null : addr;
+  }
+
+  const stackOptions = [];
+  for (let i = 2; i < 0x7e; i += 2) {
+    const addr = 0xfffe - i;
+    const hi = bus.readb(addr + 1);
+    const lo = bus.readb(addr + 2);
+    const value = (hi << 8) | lo;
+    stackOptions.push(<option key={addr} value={addr}>{cpu.regs.sp == addr ? ">" : "\xA0"}{hex16(addr)}: {hex16(value)}</option>);
   }
 
   return (<div onKeyDown={keyDown}>
@@ -205,6 +225,6 @@ export default function Emulator({ bootRomPromise, cartPromise }: { bootRomPromi
     <select multiple onChange={handleDisasmChange} style={{ listStyleType: "none", listStylePosition: "outside", whiteSpace: "pre", fontFamily: "monospace" }} id="disasm">
       {disasmItems}
     </select>
-
+    <select multiple style={{ whiteSpace: "pre", fontFamily: "monospace" }}>{stackOptions}</select>
   </div>);
 }
