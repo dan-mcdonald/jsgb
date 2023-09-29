@@ -223,6 +223,11 @@ function get16(cpu: CPU, reg: R16): number {
   }
 }
 
+function ei(cpu: CPU, _: Bus): number {
+  cpu.ime = true;
+  return 4;
+}
+
 function ld_r16_n16(target: R16, val: number): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
     set16(cpu, target, val);
@@ -843,6 +848,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "ld   a,(ff00+" + hex8(n8) + ")",
         exec: ld_r8_at_n8(R8.A, 0xff00 + n8),
+      };
+    case 0xFB:
+      return {
+        length,
+        text: "ei   ",
+        exec: ei,
       };
     case 0xFE:
       n8 = decodeImm8();

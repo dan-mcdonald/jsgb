@@ -129,3 +129,30 @@ ROM0:0159 E0 48            ld   (ff00+48),a
 ROM0:015B E0 49            ld   (ff00+49),a
 ROM0:015D 21 00 80         ld   hl,8000
 ROM0:0160 01 00 18         ld   bc,1800
+ROM0:0163 CD 99 29         call 2999
+ROM0:0166 CD A8 28         call 28A8
+ROM0:0169 CD 8A 29         call 298A
+ROM0:016C 3E 01            ld   a,01
+ROM0:016E EA 00 21         ld   (2100),a
+ROM0:0171 CD 19 7D         call 7D19
+ROM0:0174 CD C0 FF         call FFC0
+ROM0:0177 CD CE 40         call 40CE
+ROM0:017A CD 6B 2B         call 2B6B
+ROM0:017D 3E 44            ld   a,44
+ROM0:017F E0 41            ld   (ff00+41),a
+ROM0:0181 3E 4F            ld   a,4F
+ROM0:0183 E0 45            ld   (ff00+45),a
+ROM0:0185 3E 01            ld   a,01
+ROM0:0187 EA AF DB         ld   (DBAF),a
+ROM0:018A 3E 01            ld   a,01
+ROM0:018C E0 FF            ld   (ff00+FF),a
+ROM0:018E 3E 01            ld   a,01
+ROM0:0190 EA 00 21         ld   (2100),a
+ROM0:0193 CD 0F 46         call 460F
+ROM0:0196 3E 1F            ld   a,1F
+ROM0:0198 EA 00 21         ld   (2100),a
+ROM0:019B CD 00 40         call 4000
+ROM0:019E 3E 18            ld   a,18
+ROM0:01A0 E0 B5            ld   (ff00+B5),a
+ROM0:01A2 FB               ei   
+ROM0:01A3 C3 BD 03         jp   03BD
