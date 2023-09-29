@@ -121,3 +121,11 @@ BOOT:00FC 3E 01            ld   a,01
 BOOT:00FE E0 50            ld   (ff00+50),a
 ROM0:0100 00               nop  
 ROM0:0101 C3 50 01         jp   0150
+ROM0:0150 CD 81 28         call 2881
+ROM0:0153 31 FF DF         ld   sp,DFFF
+ROM0:0156 AF               xor  a
+ROM0:0157 E0 47            ld   (ff00+47),a
+ROM0:0159 E0 48            ld   (ff00+48),a
+ROM0:015B E0 49            ld   (ff00+49),a
+ROM0:015D 21 00 80         ld   hl,8000
+ROM0:0160 01 00 18         ld   bc,1800

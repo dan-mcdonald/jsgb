@@ -516,6 +516,13 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "nop  ",
         exec: () => 4
       };
+    case 0x01:
+      n16 = decodeImm16();
+      return {
+        length,
+        text: "ld   bc," + hex16(n16),
+        exec: ld_r16_n16(R16.BC, n16),
+      };
     case 0x04:
       return {
         length,
