@@ -228,6 +228,14 @@ function ei(cpu: CPU, _: Bus): number {
   return 4;
 }
 
+function res_r8(bit: number, reg: R8): InstructionFunction {
+  return function (cpu: CPU, _: Bus): number {
+    const val = get8(cpu, reg);
+    set8(cpu, reg, val & ~(1 << bit));
+    return 8;
+  };
+}
+
 function ld_r16_n16(target: R16, val: number): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
     set16(cpu, target, val);
@@ -502,6 +510,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
             return 8;
           }
         };
+      case 0x87:
+        return {
+          length,
+          text: "res  0,a",
+          exec: res_r8(0, R8.A),
+        }
       default:
         return {
           length,

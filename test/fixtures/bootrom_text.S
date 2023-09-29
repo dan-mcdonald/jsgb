@@ -156,3 +156,6 @@ ROM0:019E 3E 18            ld   a,18
 ROM0:01A0 E0 B5            ld   (ff00+B5),a
 ROM0:01A2 FB               ei   
 ROM0:01A3 C3 BD 03         jp   03BD
+ROM0:2881 F0 FF            ld   a,(ff00+FF)
+ROM0:2883 E0 D2            ld   (ff00+D2),a
+ROM0:2885 CB 87            res  0,a
