@@ -186,3 +186,12 @@ ROM0:28B4 78               ld   a,b
 ROM0:28B5 B1               or   c
 ROM0:28B6 20 F9            jr   nz,28B1
 ROM0:28B8 C9               ret  
+ROM1:7D19 0E C0            ld   c,C0
+ROM1:7D1B 06 0A            ld   b,0A
+ROM1:7D1D 21 27 7D         ld   hl,7D27
+ROM1:7D20 2A               ldi  a,(hl)
+ROM1:7D21 E2               ld   (ff00+c),a
+ROM1:7D22 0C               inc  c
+ROM1:7D23 05               dec  b
+ROM1:7D24 20 FA            jr   nz,7D20
+ROM1:7D26 C9               ret  

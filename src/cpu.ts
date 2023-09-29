@@ -343,6 +343,14 @@ export function ldi_at_r16_r8(destAddrReg: R16, val: R8): (cpu: CPU, bus: Bus) =
   };
 }
 
+export function ldi_r8_at_r16(destAddrReg: R8, atRegSrc: R16.HL): InstructionFunction {
+  return function (cpu: CPU, bus: Bus): number {
+    ld_r8_at_r16(destAddrReg, atRegSrc)(cpu, bus);
+    inc16(cpu, atRegSrc);
+    return 8;
+  };
+}
+
 function ld_r8_r8(dest: R8, src: R8): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
     const val = get8(cpu, src);
@@ -719,6 +727,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "jr   z," + hex16(jaddr),
         exec: jr_cond_addr(cond_z, jaddr),
+      };
+    case 0x2A:
+      return {
+        length,
+        text: "ldi  a,(hl)",
+        exec: ldi_r8_at_r16(R8.A, R16.HL),
       };
     case 0x2E:
       n8 = decodeImm8();
