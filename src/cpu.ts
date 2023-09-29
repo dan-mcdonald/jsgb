@@ -573,6 +573,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ld   b," + hex8(n8),
         exec: ld_r8_n8(R8.B, n8),
       };
+    case 0x0B:
+      return {
+        length,
+        text: "dec  bc",
+        exec: dec_r16(R16.BC),
+      };
     case 0x0C:
       return {
         length,

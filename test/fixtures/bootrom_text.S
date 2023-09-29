@@ -168,3 +168,6 @@ ROM0:2891 E0 40            ld   (ff00+40),a
 ROM0:2893 F0 D2            ld   a,(ff00+D2)
 ROM0:2895 E0 FF            ld   (ff00+FF),a
 ROM0:2897 C9               ret  
+ROM0:2999 AF               xor  a
+ROM0:299A 22               ldi  (hl),a
+ROM0:299B 0B               dec  bc
