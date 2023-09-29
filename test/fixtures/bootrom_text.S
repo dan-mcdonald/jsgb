@@ -159,3 +159,12 @@ ROM0:01A3 C3 BD 03         jp   03BD
 ROM0:2881 F0 FF            ld   a,(ff00+FF)
 ROM0:2883 E0 D2            ld   (ff00+D2),a
 ROM0:2885 CB 87            res  0,a
+ROM0:2887 F0 44            ld   a,(ff00+44)
+ROM0:2889 FE 91            cp   a,91
+ROM0:288B 20 FA            jr   nz,2887
+ROM0:288D F0 40            ld   a,(ff00+40)
+ROM0:288F E6 7F            and  a,7F
+ROM0:2891 E0 40            ld   (ff00+40),a
+ROM0:2893 F0 D2            ld   a,(ff00+D2)
+ROM0:2895 E0 FF            ld   (ff00+FF),a
+ROM0:2897 C9               ret  

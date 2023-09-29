@@ -236,6 +236,18 @@ function res_r8(bit: number, reg: R8): InstructionFunction {
   };
 }
 
+function and(cpu: CPU, val: number): void {
+  const res = (cpu.regs.a &= val);
+  cpu.f = cpu.f.setZ(res == 0).setN(false).setH(true).setC(false);
+}
+
+function and_n8(val: number): InstructionFunction {
+  return function (cpu: CPU, _: Bus): number {
+    and(cpu, val);
+    return 8;
+  }
+}
+
 function ld_r16_n16(target: R16, val: number): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
     set16(cpu, target, val);
@@ -848,6 +860,13 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
           bus.writeb(addr, cpu.regs.a);
           return 8;
         },
+      };
+    case 0xE6:
+      n8 = decodeImm8();
+      return {
+        length,
+        text: "and  a," + hex8(n8),
+        exec: and_n8(n8),
       };
     case 0xEA:
       n16 = decodeImm16();
