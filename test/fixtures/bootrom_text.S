@@ -175,3 +175,14 @@ ROM0:299C 78               ld   a,b
 ROM0:299D B1               or   c
 ROM0:299E 20 F9            jr   nz,2999
 ROM0:29A0 C9               ret  
+ROM0:28A8 3E 7F            ld   a,7F
+ROM0:28AA 01 00 08         ld   bc,0800
+ROM0:28AD 57               ld   d,a
+ROM0:28AE 21 00 98         ld   hl,9800
+ROM0:28B1 7A               ld   a,d
+ROM0:28B2 22               ldi  (hl),a
+ROM0:28B3 0B               dec  bc
+ROM0:28B4 78               ld   a,b
+ROM0:28B5 B1               or   c
+ROM0:28B6 20 F9            jr   nz,28B1
+ROM0:28B8 C9               ret  
