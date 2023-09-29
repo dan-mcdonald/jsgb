@@ -642,6 +642,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ld   de," + hex16(n16),
         exec: ld_r16_n16(R16.DE, n16),
       };
+    case 0x12:
+      return {
+        length,
+        text: "ld   (de),a",
+        exec: ld_at_r16_r8(R16.DE, R8.A),
+      };
     case 0x13:
       return {
         length,
