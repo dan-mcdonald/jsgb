@@ -124,7 +124,7 @@ export enum R16 {
   PC,
 }
 
-enum R8 {
+export enum R8 {
   A,
   B,
   C,
@@ -264,38 +264,47 @@ function ld_at_n16_r8(destAddr: number, valReg: R8): (cpu: CPU, bus: Bus) => num
   }
 }
 
-function dec_r16(cpu: CPU, reg: R16): number {
+function dec16(cpu: CPU, reg: R16): void {
   const oldVal = get16(cpu, reg);
   const newVal = (oldVal - 1) & 0xffff;
   set16(cpu, reg, newVal);
-  return 4;
+}
+
+export function dec_r16(reg: R16): InstructionFunction {
+  return function (cpu: CPU, _: Bus): number {
+    dec16(cpu, reg);
+    return 8;
+  };
+}
+
+function inc16(cpu: CPU, reg: R16): void {
+  const oldVal = get16(cpu, reg);
+  const newVal = (oldVal + 1) & 0xffff;
+  set16(cpu, reg, newVal);
 }
 
 function inc_r16(reg: R16): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
-    const oldVal = get16(cpu, reg);
-    const newVal = (oldVal + 1) & 0xffff;
-    set16(cpu, reg, newVal);
+    inc16(cpu, reg);
     return 8;
   };
 }
 
-function ldd_at_r16_r8(destAddrReg: R16, val: R8): (cpu: CPU, bus: Bus) => number {
+export function ldd_at_r16_r8(destAddrReg: R16, val: R8): (cpu: CPU, bus: Bus) => number {
   return function (cpu: CPU, bus: Bus): number {
     ld_at_r16_r8(destAddrReg, val)(cpu, bus);
-    dec_r16(cpu, destAddrReg);
+    dec16(cpu, destAddrReg);
     return 8;
   };
 }
 
-function ldi_at_r16_r8(destAddrReg: R16, val: R8): (cpu: CPU, bus: Bus) => number {
+export function ldi_at_r16_r8(destAddrReg: R16, val: R8): (cpu: CPU, bus: Bus) => number {
   return function (cpu: CPU, bus: Bus): number {
     ld_at_r16_r8(destAddrReg, val)(cpu, bus);
-    inc_r16(destAddrReg);
+    inc16(cpu, destAddrReg);
     return 8;
   };
 }
-
 
 function ld_r8_r8(dest: R8, src: R8): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {

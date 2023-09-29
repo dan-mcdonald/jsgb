@@ -1,4 +1,4 @@
-import { Flags, initCPU, step, maskZ, decodeInsn, pop_r16, R16, push_r16 } from "../src/cpu";
+import { Flags, initCPU, step, maskZ, decodeInsn, pop_r16, R16, push_r16, ldi_at_r16_r8, R8, ldd_at_r16_r8, dec_r16 } from "../src/cpu";
 import { expect } from 'chai';
 import { BusRead, BusWrite } from "../src/bus";
 import buildBus from "../src/buildBus";
@@ -10,6 +10,9 @@ import { audioInit } from "../src/audio";
 import { load as bessLoad } from "../src/bess";
 import { hex16, hex8 } from "../src/util";
 import { EOL } from "os";
+
+const readb_error = (_: number): number => {throw new Error("unexpected read");};
+const writeb_error = (_: number, __: number): void => {throw new Error("unexpected write");};
 
 function loadDecodeInsnTestCases(): { addr: number, bytes: number[], disasm: string }[] {
   const disasmContent = readFileSync("test/fixtures/bootrom_text.S", {encoding: "utf-8"});
@@ -104,6 +107,53 @@ describe("dec b", (): void => {
   });
 });
 
+describe("ldi_at_r16_r8", () => {
+  it("works right", () => {
+    const cpu = initCPU();
+    cpu.regs.h = 0x80;
+    cpu.regs.l = 0x10;
+    cpu.regs.a = 0x41;
+    const writeMap = new Map<number,number>();
+    const writeb = (addr: number, val: number): void => {
+      writeMap.set(addr, val);
+    };
+    const bus = {writeb, readb: readb_error};
+    ldi_at_r16_r8(R16.HL, R8.A)(cpu, bus);
+    expect(writeMap.size).to.equal(1);
+    expect(writeMap.get(0x8010)).to.equal(0x41);
+    expect(cpu.regs.h).to.equal(0x80);
+    expect(cpu.regs.l).to.equal(0x11);
+  });
+});
+
+describe("ldd_at_r16_r8", () => {
+  it("works right", () => {
+    const cpu = initCPU();
+    cpu.regs.h = 0x80;
+    cpu.regs.l = 0x10;
+    cpu.regs.a = 0x41;
+    const writeMap = new Map<number,number>();
+    const writeb = (addr: number, val: number): void => {
+      writeMap.set(addr, val);
+    };
+    const bus = {writeb, readb: readb_error};
+    ldd_at_r16_r8(R16.HL, R8.A)(cpu, bus);
+    expect(writeMap.size).to.equal(1);
+    expect(writeMap.get(0x8010)).to.equal(0x41);
+    expect(cpu.regs.h).to.equal(0x80);
+    expect(cpu.regs.l).to.equal(0x0F);
+  });
+});
+
+describe("dec_r16", () => {
+  it("works", () => {
+    const cpu = initCPU();
+    cpu.regs.h = 0x01;
+    const bus = { readb: readb_error, writeb: writeb_error };
+    dec_r16(R16.HL)(cpu, bus);
+  });
+});
+
 describe("pop bc", (): void => {
   it("pops 0x04CE", (): void => {
     const cpu = initCPU()
@@ -129,12 +179,11 @@ describe("push bc", (): void => {
     cpu.regs.sp = 0xfffc;
     cpu.regs.b = 0x04;
     cpu.regs.c = 0xce;
-    function readb(_: number): number { throw new Error("unexpected readb"); }
     const writeMap = new Map<number,number>();
     const writeb = (addr: number, val: number): void => {
       writeMap.set(addr, val);
     };
-    push_r16(R16.BC)(cpu, {readb, writeb});
+    push_r16(R16.BC)(cpu, {readb: readb_error, writeb});
     expect(cpu.regs.sp).to.equal(0xfffa);
     expect(writeMap.get(0xfffc)).to.equal(0x04);
     expect(writeMap.get(0xfffb)).to.equal(0xce);
