@@ -60,8 +60,10 @@ describe("dec b", (): void => {
   it("decrements 4 to 3", () => {
     const cpu = initCPU();
     cpu.regs.b = 4;
+    expect(cpu.f.N()).to.equal(false);
     step(cpu, bus);
     expect(cpu.regs.b).to.equal(3);
+    expect(cpu.f.N()).to.equal(true);
   });
 
   it("decrements 0 to 255", () => {

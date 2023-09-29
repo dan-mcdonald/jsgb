@@ -335,7 +335,7 @@ function dec_r8(reg: R8): InstructionFunction {
     const oldVal = get8(cpu, reg);
     const newVal = (oldVal - 1) & 0xff;
     set8(cpu, reg, newVal);
-    cpu.f = cpu.f.setZ(newVal === 0).setN(false).setH((oldVal & 0xf) == 0xf);
+    cpu.f = cpu.f.setZ(newVal === 0).setN(true).setH((oldVal & 0xf) == 0xf);
     return 4;
   }
 }
