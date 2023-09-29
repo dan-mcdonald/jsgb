@@ -248,6 +248,18 @@ function and_n8(val: number): InstructionFunction {
   }
 }
 
+function or(cpu: CPU, val: number): void {
+  const res = (cpu.regs.a |= val);
+  cpu.f = cpu.f.setZ(res == 0).setN(false).setH(false).setC(false);
+}
+
+function or_r8(reg: R8): InstructionFunction {
+  return function(cpu: CPU, _: Bus) {
+    or(cpu, get8(cpu, reg));
+    return 4;
+  };
+}
+
 function ld_r16_n16(target: R16, val: number): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
     set16(cpu, target, val);
@@ -809,6 +821,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "xor  a",
         exec: (cpu: CPU) => xor(cpu, "a"),
+      };
+    case 0xB1:
+      return {
+        length,
+        text: "or   c",
+        exec: or_r8(R8.C),
       };
     case 0xBE:
       return {

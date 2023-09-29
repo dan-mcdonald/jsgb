@@ -171,3 +171,7 @@ ROM0:2897 C9               ret
 ROM0:2999 AF               xor  a
 ROM0:299A 22               ldi  (hl),a
 ROM0:299B 0B               dec  bc
+ROM0:299C 78               ld   a,b
+ROM0:299D B1               or   c
+ROM0:299E 20 F9            jr   nz,2999
+ROM0:29A0 C9               ret  
