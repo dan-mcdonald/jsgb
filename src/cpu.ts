@@ -103,6 +103,20 @@ export function dump(cpu: CPU): string {
   return `pc ${hex16(cpu.pc)} sp ${hex16(cpu.regs.sp)} af ${hex8(cpu.regs.a)}${hex8(cpu.f.valueOf())} bc ${hex8(cpu.regs.b)}${hex8(cpu.regs.c)} de ${hex8(cpu.regs.d)}${hex8(cpu.regs.e)} hl ${hex8(cpu.regs.h)}${hex8(cpu.regs.l)}`;
 }
 
+function stackDump(cpu: CPU, bus: Bus): number[] {
+  const elems: number[] = [];
+  const initSp = cpu.regs.sp;
+  for(let i = 0; i < 10 && cpu.regs.sp < 0xfffe; i++) {
+    try {
+      elems.push(pop16(cpu, bus));
+    } catch (_) {
+      break;
+    }
+  }
+  cpu.regs.sp = initSp;
+  return elems;
+}
+
 export interface Instruction {
   length: number;
   text: string;
@@ -1767,7 +1781,8 @@ export function step(cpu: CPU, bus: Bus): number {
     //       throw new Error(`unknown opcode ${hex8(inst)}`);
     //   }
   } catch (err) {
-    const stack = (err instanceof Error) ? err.stack : "";
-    throw new Error(`Error while executing instruction at at ${hex16(instAddr)}\n${String(err)}\n${stack}`);
+    const cpuStack = stackDump(cpu, bus).map(hex16).join(" ");
+    const cpuDump = dump(cpu);
+    throw new Error(`Error while executing instruction at at ${hex16(instAddr)}\nCPU dump: ${cpuDump}\nCPU stack: ${cpuStack}\n${String(err)}`);
   }
 }
