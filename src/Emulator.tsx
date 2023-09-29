@@ -69,7 +69,7 @@ export default function Emulator({ bootRomPromise, cartPromise }: { bootRomPromi
   const audio = audioInit();
   const [bus, setBus] = useState(buildBus(bootRom, cartBuild(cart), ppu, audio));
   const [cycleCount, setCycleCount] = useState(0);
-  const [breakPoints, setBreakPoints] = useState<number[]>([0x0100]);
+  const [breakPoints, setBreakPoints] = useState<number[]>([]);
   const screenContextRef: MutableRefObject<null | CanvasRenderingContext2D> = useRef(null);
 
   const screenRef = useCallback((screenElem: HTMLCanvasElement | null) => {
