@@ -79,7 +79,7 @@ export default function Emulator({ bootRomPromise, cartPromise }: { bootRomPromi
         if (!screenContextRef.current) {
           console.error("Could not get screen context");
           return;
-        } 
+        }
         PPU.renderScreen(screenContextRef.current, ppu);
       }
     } else {
@@ -95,10 +95,10 @@ export default function Emulator({ bootRomPromise, cartPromise }: { bootRomPromi
       const elapsed = time - lastFrameTime;
       const targetCycles = elapsed * 4194.304;
       let frameCycles = 0;
-      for(let frameDone = false; !frameDone;) {
+      for (let frameDone = false; !frameDone;) {
         const cycles = CPU.step(cpu, bus);
         frameCycles += cycles;
-        for(let i = 0; i < cycles; i++) {
+        for (let i = 0; i < cycles; i++) {
           PPU.tick(ppu, bus);
         }
         if (breakPoints.includes(cpu.pc)) {
@@ -113,7 +113,7 @@ export default function Emulator({ bootRomPromise, cartPromise }: { bootRomPromi
       setCycleCount(cycleCount + frameCycles);
       setCpu(cpu);
       setBus(bus);
-      if(screenContextRef.current) {
+      if (screenContextRef.current) {
         PPU.renderScreen(screenContextRef.current, ppu);
       }
     }
@@ -158,12 +158,17 @@ export default function Emulator({ bootRomPromise, cartPromise }: { bootRomPromi
   }
 
   function keyDown(e: KeyboardEvent) {
-    if (e.code == "F3") {
-      doStep();
-      e.preventDefault();
-    }
-    if (e.code == "F2") {
-      toggleBreakPoint();
+    switch (e.code) {
+      case "F7":
+        e.preventDefault();
+        doStep();
+        break;
+      case "F2":
+        toggleBreakPoint();
+        break;
+      case "F9":
+        doRun();
+        break;
     }
   }
 
