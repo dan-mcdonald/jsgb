@@ -445,7 +445,7 @@ function jr_cond_addr(cond: (cpu: CPU) => boolean, addr: number): InstructionFun
   }
 }
 
-function jr_addr(addr: number): InstructionFunction {
+function jp_addr(addr: number): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
     cpu.pc = addr;
     return 12;
@@ -513,7 +513,7 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
     case 0x00:
       return {
         length,
-        text: "NOP",
+        text: "nop  ",
         exec: () => 4
       };
     case 0x04:
@@ -595,7 +595,7 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
       return {
         length,
         text: "jr   " + hex16(jaddr),
-        exec: jr_addr(jaddr),
+        exec: jp_addr(jaddr),
       };
     case 0x1A:
       return {
@@ -778,6 +778,13 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "pop  bc",
         exec: pop_r16(R16.BC),
       };
+    case 0xC3:
+      n16 = decodeImm16();
+      return {
+        length,
+        text: "jp   " + hex16(n16),
+        exec: jp_addr(n16),
+      }
     case 0xC5:
       return {
         length,

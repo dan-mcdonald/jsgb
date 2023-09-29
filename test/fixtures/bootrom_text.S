@@ -119,3 +119,5 @@ BOOT:00F9 86               add  (hl)
 BOOT:00FA 20 FE            jr   nz,00FA
 BOOT:00FC 3E 01            ld   a,01
 BOOT:00FE E0 50            ld   (ff00+50),a
+ROM0:0100 00               nop  
+ROM0:0101 C3 50 01         jp   0150
