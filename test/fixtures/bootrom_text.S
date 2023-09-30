@@ -427,3 +427,77 @@ ROM0:03C7 EA 00 21         ld   (2100),a
 ROM0:03CA AF               xor  a
 ROM0:03CB E0 FD            ld   (ff00+FD),a
 ROM0:03CD 76               halt 
+ROM0:0209 FA FD D6         ld   a,(D6FD)
+ROM0:020C E6 7F            and  a,7F
+ROM0:020E 5F               ld   e,a
+ROM0:020F F0 40            ld   a,(ff00+40)
+ROM0:0211 E6 80            and  a,80
+ROM0:0213 B3               or   e
+ROM0:0214 E0 40            ld   (ff00+40),a
+ROM0:0216 21 E7 FF         ld   hl,FFE7
+ROM0:0219 34               inc  (hl)
+ROM0:021A FA 95 DB         ld   a,(DB95)
+ROM0:021D FE 00            cp   a,00
+ROM0:021F 20 0F            jr   nz,0230
+ROM0:0221 FA 96 DB         ld   a,(DB96)
+ROM0:0224 FE 08            cp   a,08
+ROM0:0226 38 08            jr   c,0230
+ROM0:0228 3E 01            ld   a,01
+ROM0:022A EA 00 21         ld   (2100),a
+ROM0:022D CD B7 6D         call 6DB7
+ROM0:0230 FA 7F C1         ld   a,(C17F)
+ROM0:0233 A7               and  a
+ROM0:0234 CA 52 03         jp   z,0352
+ROM0:0237 3C               inc  a
+ROM0:0238 20 0B            jr   nz,0245
+ROM0:023A 3E 17            ld   a,17
+ROM0:023C EA 00 21         ld   (2100),a
+ROM0:023F CD A6 46         call 46A6
+ROM0:0242 C3 52 03         jp   0352
+ROM0:0245 3C               inc  a
+ROM0:0246 28 F2            jr   z,023A
+ROM0:0248 3E 14            ld   a,14
+ROM0:024A EA 00 21         ld   (2100),a
+ROM0:024D FA 80 C1         ld   a,(C180)
+ROM0:0250 3C               inc  a
+ROM0:0251 EA 80 C1         ld   (C180),a
+ROM0:0254 FE C0            cp   a,C0
+ROM0:0256 20 14            jr   nz,026C
+ROM0:0258 FA 7F C1         ld   a,(C17F)
+ROM0:025B FE 02            cp   a,02
+ROM0:025D 20 03            jr   nz,0262
+ROM0:025F CD 1B 54         call 541B
+ROM0:0262 AF               xor  a
+ROM0:0263 EA 7F C1         ld   (C17F),a
+ROM0:0266 EA CA C3         ld   (C3CA),a
+ROM0:0269 C3 52 03         jp   0352
+ROM0:026C FE 60            cp   a,60
+ROM0:026E 38 4C            jr   c,02BC
+ROM0:0270 F5               push af
+ROM0:0271 E6 07            and  a,07
+ROM0:0273 20 0B            jr   nz,0280
+ROM0:0275 FA CA C3         ld   a,(C3CA)
+ROM0:0278 FE 0C            cp   a,0C
+ROM0:027A 28 3F            jr   z,02BB
+ROM0:027C 3C               inc  a
+ROM0:027D EA CA C3         ld   (C3CA),a
+ROM0:0280 FA CA C3         ld   a,(C3CA)
+ROM0:0283 5F               ld   e,a
+ROM0:0284 F0 E7            ld   a,(ff00+E7)
+ROM0:0286 E6 03            and  a,03
+ROM0:0288 83               add  e
+ROM0:0289 5F               ld   e,a
+ROM0:028A 16 00            ld   d,00
+ROM0:028C FA 7F C1         ld   a,(C17F)
+ROM0:028F FE 03            cp   a,03
+ROM0:0291 28 15            jr   z,02A8
+ROM0:0293 21 6A 54         ld   hl,546A
+ROM0:0296 19               add  hl,de
+ROM0:0297 7E               ld   a,(hl)
+ROM0:0298 EA 97 DB         ld   (DB97),a
+ROM0:029B EA 99 DB         ld   (DB99),a
+ROM0:029E 21 7A 54         ld   hl,547A
+ROM0:02A1 19               add  hl,de
+ROM0:02A2 7E               ld   a,(hl)
+ROM0:02A3 EA 98 DB         ld   (DB98),a
+ROM0:02A6 18 13            jr   02BB

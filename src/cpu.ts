@@ -543,6 +543,13 @@ function add(cpu: CPU, val: number): void {
   cpu.f = cpu.f.setZ(newA == 0).setN(false).setH((oldA & 0xf) + (val & 0xf) > 0xf).setC(oldA + val > 0xff);
 }
 
+function add_r8(reg: R8): InstructionFunction {
+  return function (cpu: CPU, _: Bus): number {
+    add(cpu, get8(cpu, reg));
+    return 4;
+  };
+}
+
 function add_at_HL(cpu: CPU, bus: Bus): number {
   const addr = get16(cpu, R16.HL);
   const val = bus.readb(addr);
@@ -1016,6 +1023,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ld   a,(hl)",
         exec: ld_r8_at_r16(R8.A, R16.HL),
       };
+    case 0x83:
+      return {
+        length,
+        text: "add  e",
+        exec: add_r8(R8.E),
+      };
     case 0x86:
       return {
         length,
@@ -1045,6 +1058,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "or   d",
         exec: or_r8(R8.D),
+      };
+    case 0xB3:
+      return {
+        length,
+        text: "or   e",
+        exec: or_r8(R8.E),
       };
     case 0xB6:
       return {
