@@ -203,3 +203,7 @@ ROM0:28C9 78               ld   a,b
 ROM0:28CA B1               or   c
 ROM0:28CB 20 F8            jr   nz,28C5
 ROM0:28CD C9               ret  
+ROM1:46DD 0E 01            ld   c,01
+ROM1:46DF 06 05            ld   b,05
+ROM1:46E1 21 00 A1         ld   hl,A100
+ROM1:46E4 19               add  hl,de

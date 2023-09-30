@@ -490,6 +490,20 @@ function add_at_HL(cpu: CPU, bus: Bus): number {
   return 8;
 }
 
+function add16(cpu: CPU, dest: R16, addend: number): void {
+  const oldVal = get16(cpu, dest);
+  const newVal = (oldVal + addend) & 0xffff;
+  set16(cpu, dest, newVal);
+  cpu.f = cpu.f.setN(false).setH((oldVal & 0xfff) + (addend & 0xfff) > 0xfff).setC(oldVal + addend > 0xffff);
+}
+
+function add_r16_r16(dest: R16, addend: R16): InstructionFunction {
+  return function(cpu: CPU, _: Bus): number {
+    add16(cpu, dest, addend);
+    return 8;
+  }
+}
+
 function cond_z(cpu: CPU): boolean {
   return cpu.f.Z();
 }
@@ -681,6 +695,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "jr   " + hex16(jaddr),
         exec: jp_addr(jaddr),
       };
+    case 0x19:
+      return {
+        length,
+        text: "add  hl,de",
+        exec: add_r16_r16(R16.HL, R16.DE),
+      }
     case 0x1A:
       return {
         length,
