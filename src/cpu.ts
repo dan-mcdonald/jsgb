@@ -1392,8 +1392,7 @@ export function step(cpu: CPU, bus: Bus): number {
       cpu.ime = false;
       cpu.halt = false;
       clearInterrupt(bus, intPending);
-      throw Error("TODO execute call to 0x" + hex16(vector));
-      return 4;
+      return call(vector)(cpu, bus);
     }
     if (cpu.halt) {
       return 4;
