@@ -718,6 +718,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ld   a,(de)",
         exec: ld_r8_at_r16(R8.A, R16.DE),
       };
+    case 0x1B:
+      return {
+        length,
+        text: "dec  de",
+        exec: dec_r16(R16.DE),
+      };
     case 0x1D:
       return {
         length,
