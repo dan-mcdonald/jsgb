@@ -501,3 +501,24 @@ ROM0:02A1 19               add  hl,de
 ROM0:02A2 7E               ld   a,(hl)
 ROM0:02A3 EA 98 DB         ld   (DB98),a
 ROM0:02A6 18 13            jr   02BB
+RO1F:4204 21 60 D3         ld   hl,D360
+RO1F:4207 7E               ld   a,(hl)
+RO1F:4208 A7               and  a
+RO1F:4209 28 11            jr   z,421C
+RO1F:420B FE 01            cp   a,01
+RO1F:420D 28 07            jr   z,4216
+RO1F:420F FA C6 D3         ld   a,(D3C6)
+RO1F:4212 A7               and  a
+RO1F:4213 C2 E6 53         jp   nz,53E6
+RO1F:4216 7E               ld   a,(hl)
+RO1F:4217 21 00 41         ld   hl,4100
+RO1F:421A 18 07            jr   4223
+RO1F:421C 23               inc  hl
+RO1F:421D 7E               ld   a,(hl)
+RO1F:421E A7               and  a
+RO1F:421F C8               ret  z
+RO1F:4220 21 82 41         ld   hl,4182
+RO1F:4223 CD 60 7A         call 7A60
+RO1F:4226 11 90 D3         ld   de,D390
+RO1F:4229 01 94 D3         ld   bc,D394
+RO1F:422C E9               jp   hl

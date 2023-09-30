@@ -492,6 +492,16 @@ function reti(cpu: CPU, bus: Bus): number {
   return 16;
 }
 
+function ret_cond(pred: (cpu: CPU) => boolean): InstructionFunction {
+  return function (cpu: CPU, bus: Bus): number {
+    if (pred(cpu)) {
+      cpu.pc = pop16(cpu, bus);
+      return 20;
+    }
+    return 8;
+  };
+}
+
 function halt(cpu: CPU, _: Bus): number {
   cpu.halt = true;
   return 4;
@@ -612,6 +622,11 @@ function jp_addr(addr: number): InstructionFunction {
     cpu.pc = addr;
     return 12;
   }
+}
+
+function jp_HL(cpu: CPU, _: Bus): number {
+  cpu.pc = (cpu.regs.h << 8) | cpu.regs.l;
+  return 4;
 }
 
 function rl_r8(reg: R8): InstructionFunction {
@@ -1115,6 +1130,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "push bc",
         exec: push_r16(R16.BC),
       };
+    case 0xC8:
+      return {
+        length,
+        text: "ret  z",
+        exec: ret_cond(cond_z),
+      };
     case 0xC9:
       return {
         length,
@@ -1190,6 +1211,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "and  a," + hex8(n8),
         exec: and_n8(n8),
+      };
+    case 0xE9:
+      return {
+        length,
+        text: "jp   hl",
+        exec: jp_HL,
       };
     case 0xEA:
       n16 = decodeImm16();
