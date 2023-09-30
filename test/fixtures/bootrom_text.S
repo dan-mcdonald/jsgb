@@ -223,3 +223,5 @@ ROM1:46F9 CD B5 27         call 27B5
 ROM1:46FC 22               ldi  (hl),a
 ROM1:46FD 3C               inc  a
 ROM1:46FE 3C               inc  a
+ROM1:46FF FE 0B            cp   a,0B
+ROM1:4701 38 F6            jr   c,46F9

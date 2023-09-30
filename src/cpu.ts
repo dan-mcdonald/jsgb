@@ -515,6 +515,10 @@ function cond_z(cpu: CPU): boolean {
   return cpu.f.Z();
 }
 
+function cond_c(cpu: CPU): boolean {
+  return cpu.f.C();
+}
+
 function jr_cond_addr(cond: (cpu: CPU) => boolean, addr: number): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
     if (cond(cpu)) {
@@ -800,6 +804,14 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "ldd  (hl),a",
         exec: ldd_at_r16_r8(R16.HL, R8.A),
+      };
+    case 0x38:
+      n8 = decodeImm8();
+      jaddr = addr + length + u8tos8(n8);
+      return {
+        length,
+        text: "jr   c," + hex16(jaddr),
+        exec: jr_cond_addr(cond_c, jaddr),
       };
     case 0x3C:
       return {
