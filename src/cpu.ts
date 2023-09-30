@@ -482,7 +482,15 @@ function call(addr: number): InstructionFunction {
   return function (cpu: CPU, bus: Bus) {
     push16(cpu, bus, cpu.pc);
     cpu.pc = addr;
-    return 12;
+    return 24;
+  }
+}
+
+function rst(addr: number): InstructionFunction {
+  return function (cpu: CPU, bus: Bus) {
+    push16(cpu, bus, cpu.pc);
+    cpu.pc = addr;
+    return 16;
   }
 }
 
@@ -661,6 +669,21 @@ function rl_r8(reg: R8): InstructionFunction {
   }
 }
 
+function sla(cpu: CPU, val: number): number {
+  const newVal = (val << 1) & 0xff;
+  cpu.f = cpu.f.setZ(newVal == 0).setN(false).setH(false).setC((val & 0x80) !== 0);
+  return newVal;
+}
+
+function sla_r8(reg: R8): InstructionFunction {
+  return function(cpu: CPU, _: Bus): number {
+    const oldVal = get8(cpu, reg);
+    const newVal = sla(cpu, oldVal);
+    set8(cpu, reg, newVal);
+    return 8;
+  };
+}
+
 export function decodeInsn(addr: number, bus: Bus): Instruction {
   let length = 0;
   function decodeImm8(): number {
@@ -683,6 +706,18 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
           length,
           text: "rl   c",
           exec: rl_r8(R8.C),
+        };
+      case 0x12:
+        return {
+          length,
+          text: "rl   d",
+          exec: rl_r8(R8.D),
+        };
+      case 0x23:
+        return {
+          length,
+          text: "sla  e",
+          exec: sla_r8(R8.E),
         };
       case 0x37:
         return {
@@ -1012,11 +1047,23 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ld   c,a",
         exec: ld_r8_r8(R8.C, R8.A),
       };
-    case 0x57:
+    case 0x56:
+      return {
+        length,
+        text: "ld   d,(hl)",
+        exec: ld_r8_at_r16(R8.D, R16.HL),
+      };
+      case 0x57:
       return {
         length,
         text: "ld   d,a",
         exec: ld_r8_r8(R8.D, R8.A),
+      };
+    case 0x5E:
+      return {
+        length,
+        text: "ld   e,(hl)",
+        exec: ld_r8_at_r16(R8.E, R16.HL),
       };
     case 0x5F:
       return {
@@ -1193,6 +1240,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "push bc",
         exec: push_r16(R16.BC),
+      };
+    case 0xC7:
+      return {
+        length,
+        text: "rst  00",
+        exec: rst(0x00),
       };
     case 0xC8:
       return {

@@ -555,3 +555,50 @@ ROM0:2831 79               ld   a,c
 ROM0:2832 E0 CB            ld   (ff00+CB),a
 ROM0:2834 3E 30            ld   a,30
 ROM0:2836 E0 00            ld   (ff00+00),a
+ROM0:03AA 3E 01            ld   a,01
+ROM0:03AC CD B9 07         call 07B9
+ROM0:03AF CD F0 5C         call 5CF0
+ROM0:03B2 CD 90 0A         call 0A90
+ROM0:03B5 3E 01            ld   a,01
+ROM0:03B7 EA 00 21         ld   (2100),a
+ROM0:03BA CD 03 5D         call 5D03
+ROM0:03BD 3E 1F            ld   a,1F
+ROM0:03BF EA 00 21         ld   (2100),a
+ROM0:03C2 CD 80 7F         call 7F80
+ROM0:03C5 3E 0C            ld   a,0C
+ROM0:03C7 EA 00 21         ld   (2100),a
+ROM0:03CA AF               xor  a
+ROM0:03CB E0 FD            ld   (ff00+FD),a
+ROM0:03CD 76               halt 
+ROM0:03CE F0 D1            ld   a,(ff00+D1)
+ROM0:03D0 A7               and  a
+ROM0:03D1 28 FB            jr   z,03CE
+ROM0:03D3 AF               xor  a
+ROM0:03D4 E0 D1            ld   (ff00+D1),a
+ROM0:03D6 C3 A6 01         jp   01A6
+ROM0:0ACE FA 95 DB         ld   a,(DB95)
+ROM0:0AD1 C7               rst  00
+ROM0:2872 5F               ld   e,a
+ROM0:2873 16 00            ld   d,00
+ROM0:2875 CB 23            sla  e
+ROM0:2877 CB 12            rl   d
+ROM0:2879 E1               pop  hl
+ROM0:287A 19               add  hl,de
+ROM0:287B 5E               ld   e,(hl)
+ROM0:287C 23               inc  hl
+ROM0:287D 56               ld   d,(hl)
+ROM0:287E D5               push de
+ROM0:287F E1               pop  hl
+ROM0:2880 E9               jp   hl
+ROM0:2881 F0 FF            ld   a,(ff00+FF)
+ROM0:2883 E0 D2            ld   (ff00+D2),a
+ROM0:2885 CB 87            res  0,a
+ROM0:2887 F0 44            ld   a,(ff00+44)
+ROM0:2889 FE 91            cp   a,91
+ROM0:288B 20 FA            jr   nz,2887
+ROM0:288D F0 40            ld   a,(ff00+40)
+ROM0:288F E6 7F            and  a,7F
+ROM0:2891 E0 40            ld   (ff00+40),a
+ROM0:2893 F0 D2            ld   a,(ff00+D2)
+ROM0:2895 E0 FF            ld   (ff00+FF),a
+ROM0:2897 C9               ret  
