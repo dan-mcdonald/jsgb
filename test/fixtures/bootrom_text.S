@@ -419,3 +419,11 @@ ROM0:05BA 3E 01            ld   a,01
 ROM0:05BC E0 D1            ld   (ff00+D1),a
 ROM0:05BE F1               pop  af
 ROM0:05BF D9               reti 
+ROM0:03BD 3E 1F            ld   a,1F
+ROM0:03BF EA 00 21         ld   (2100),a
+ROM0:03C2 CD 80 7F         call 7F80
+ROM0:03C5 3E 0C            ld   a,0C
+ROM0:03C7 EA 00 21         ld   (2100),a
+ROM0:03CA AF               xor  a
+ROM0:03CB E0 FD            ld   (ff00+FD),a
+ROM0:03CD 76               halt 

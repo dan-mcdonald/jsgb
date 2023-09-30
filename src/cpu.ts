@@ -492,6 +492,11 @@ function reti(cpu: CPU, bus: Bus): number {
   return 16;
 }
 
+function halt(cpu: CPU, _: Bus): number {
+  cpu.halt = true;
+  return 4;
+}
+
 function cp(cpu: CPU, val: number): void {
   const diff = ((cpu.regs.a - val) & 0xff);
   cpu.f = cpu.f.setZ(diff == 0).setN(true).setH(false).setC(val > cpu.regs.a);
@@ -962,6 +967,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "ld   h,a",
         exec: ld_r8_r8(R8.H, R8.A),
+      };
+    case 0x76:
+      return {
+        length,
+        text: "halt ",
+        exec: halt,
       };
     case 0x77:
       return {
