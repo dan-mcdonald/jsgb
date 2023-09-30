@@ -327,3 +327,17 @@ ROM1:46D8 22               ldi  (hl),a
 ROM1:46D9 1D               dec  e
 ROM1:46DA 20 FC            jr   nz,46D8
 ROM1:46DC C9               ret  
+RO1F:4000 C3 09 40         jp   4009
+RO1F:4003 C3 17 7B         jp   7B17
+RO1F:4006 C3 1E 40         jp   401E
+RO1F:4009 21 00 D3         ld   hl,D300
+RO1F:400C 36 00            ld   (hl),00
+RO1F:400E 2C               inc  l
+RO1F:400F 20 FB            jr   nz,400C
+RO1F:4011 3E 80            ld   a,80
+RO1F:4013 E0 26            ld   (ff00+26),a
+RO1F:4015 3E 77            ld   a,77
+RO1F:4017 E0 24            ld   (ff00+24),a
+RO1F:4019 3E FF            ld   a,FF
+RO1F:401B E0 25            ld   (ff00+25),a
+RO1F:401D C9               ret  

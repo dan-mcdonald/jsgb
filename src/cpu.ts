@@ -834,6 +834,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ldi  a,(hl)",
         exec: ldi_r8_at_r16(R8.A, R16.HL),
       };
+    case 0x2C:
+      return {
+        length,
+        text: "inc  l",
+        exec: inc_r8(R8.L),
+      };
     case 0x2E:
       n8 = decodeImm8();
       return {
