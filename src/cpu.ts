@@ -456,6 +456,13 @@ function cp_n8(val: number): InstructionFunction {
   }
 }
 
+function cp_r8(reg: R8): InstructionFunction {
+  return function (cpu: CPU, _: Bus): number {
+    cp(cpu, get8(cpu, reg));
+    return 4;
+  }
+}
+
 function cp_at_HL(cpu: CPU, bus: Bus): number {
   const addr = get16(cpu, R16.HL);
   const val = bus.readb(addr);
@@ -881,6 +888,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "xor  a",
         exec: (cpu: CPU) => xor(cpu, "a"),
+      };
+    case 0xB9:
+      return {
+        length,
+        text: "cp   c",
+        exec: cp_r8(R8.C),
       };
     case 0xB1:
       return {

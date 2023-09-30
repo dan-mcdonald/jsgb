@@ -207,3 +207,6 @@ ROM1:46DD 0E 01            ld   c,01
 ROM1:46DF 06 05            ld   b,05
 ROM1:46E1 21 00 A1         ld   hl,A100
 ROM1:46E4 19               add  hl,de
+ROM1:46E5 CD B5 27         call 27B5
+ROM1:46E8 2A               ldi  a,(hl)
+ROM1:46E9 B9               cp   c
