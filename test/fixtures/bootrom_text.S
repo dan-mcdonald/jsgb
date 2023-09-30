@@ -237,3 +237,5 @@ ROM1:4710 C9               ret
 ROM0:27B5 E5               push hl
 ROM0:27B6 21 00 00         ld   hl,0000
 ROM0:27B9 36 0A            ld   (hl),0A
+ROM0:27BB E1               pop  hl
+ROM0:27BC C9               ret  

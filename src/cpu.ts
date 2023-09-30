@@ -993,6 +993,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ld   (ff00+" + hex8(n8) + "),a",
         exec: ld_at_n8_r8(0xff00 + n8, R8.A),
       };
+    case 0xE1:
+      return {
+        length,
+        text: "pop  hl",
+        exec: pop_r16(R16.HL),
+      };
     case 0xE2:
       return {
         length,
