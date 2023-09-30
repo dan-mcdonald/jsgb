@@ -236,3 +236,4 @@ ROM1:470E 20 F6            jr   nz,4706
 ROM1:4710 C9               ret  
 ROM0:27B5 E5               push hl
 ROM0:27B6 21 00 00         ld   hl,0000
+ROM0:27B9 36 0A            ld   (hl),0A

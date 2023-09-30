@@ -307,6 +307,14 @@ function ld_at_r16_r8(destAddrReg: R16, valReg: R8): (cpu: CPU, bus: Bus) => num
   }
 }
 
+function ld_at_r16_n8(destAddrReg: R16, val: number): InstructionFunction {
+  return function (cpu: CPU, bus: Bus): number {
+    const destAddr = get16(cpu, destAddrReg);
+    bus.writeb(destAddr, val);
+    return 8;
+  };
+}
+
 function ld_at_n16_r8(destAddr: number, valReg: R8): (cpu: CPU, bus: Bus) => number {
   return function (cpu: CPU, bus: Bus): number {
     const val = get8(cpu, valReg);
@@ -810,6 +818,13 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "ldd  (hl),a",
         exec: ldd_at_r16_r8(R16.HL, R8.A),
+      };
+    case 0x36:
+      n8 = decodeImm8();
+      return {
+        length,
+        text: "ld   (hl)," + hex8(n8),
+        exec: ld_at_r16_n8(R16.HL, n8),
       };
     case 0x38:
       n8 = decodeImm8();
