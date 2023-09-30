@@ -522,3 +522,36 @@ RO1F:4223 CD 60 7A         call 7A60
 RO1F:4226 11 90 D3         ld   de,D390
 RO1F:4229 01 94 D3         ld   bc,D394
 RO1F:422C E9               jp   hl
+ROM0:27FE FA 24 C1         ld   a,(C124)
+ROM0:2801 A7               and  a
+ROM0:2802 20 34            jr   nz,2838
+ROM0:2804 3E 20            ld   a,20
+ROM0:2806 E0 00            ld   (ff00+00),a
+ROM0:2808 F0 00            ld   a,(ff00+00)
+ROM0:280A F0 00            ld   a,(ff00+00)
+ROM0:280C 2F               cpl  
+ROM0:280D E6 0F            and  a,0F
+ROM0:280F 47               ld   b,a
+ROM0:2810 3E 10            ld   a,10
+ROM0:2812 E0 00            ld   (ff00+00),a
+ROM0:2814 F0 00            ld   a,(ff00+00)
+ROM0:2816 F0 00            ld   a,(ff00+00)
+ROM0:2818 F0 00            ld   a,(ff00+00)
+ROM0:281A F0 00            ld   a,(ff00+00)
+ROM0:281C F0 00            ld   a,(ff00+00)
+ROM0:281E F0 00            ld   a,(ff00+00)
+ROM0:2820 F0 00            ld   a,(ff00+00)
+ROM0:2822 F0 00            ld   a,(ff00+00)
+ROM0:2824 CB 37            swap a
+ROM0:2826 2F               cpl  
+ROM0:2827 E6 F0            and  a,F0
+ROM0:2829 B0               or   b
+ROM0:282A 4F               ld   c,a
+ROM0:282B F0 CB            ld   a,(ff00+CB)
+ROM0:282D A9               xor  c
+ROM0:282E A1               and  c
+ROM0:282F E0 CC            ld   (ff00+CC),a
+ROM0:2831 79               ld   a,c
+ROM0:2832 E0 CB            ld   (ff00+CB),a
+ROM0:2834 3E 30            ld   a,30
+ROM0:2836 E0 00            ld   (ff00+00),a

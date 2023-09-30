@@ -545,6 +545,28 @@ function sub_r8(reg: R8): InstructionFunction {
   }
 }
 
+function cpl(cpu: CPU, _: Bus): number {
+  cpu.regs.a ^= 0xff;
+  cpu.f = cpu.f.setN(true).setH(true);
+  return 4;
+}
+
+function swap(cpu: CPU, val: number): number {
+  cpu.f = cpu.f.setZ(val == 0).setN(false).setH(false).setC(false);
+  const lo = val & 0x0f;
+  const hi = val & 0xf0;
+  return (hi >> 4) | (lo << 4);
+}
+
+function swap_r8(reg: R8): InstructionFunction {
+  return function(cpu: CPU, _: Bus) {
+    const oldVal = get8(cpu, reg);
+    const newVal = swap(cpu, oldVal);
+    set8(cpu, reg, newVal);
+    return 8;
+  };
+}
+
 function add(cpu: CPU, val: number): void {
   // A = A + val
   const oldA = cpu.regs.a;
@@ -661,6 +683,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
           length,
           text: "rl   c",
           exec: rl_r8(R8.C),
+        };
+      case 0x37:
+        return {
+          length,
+          text: "swap a",
+          exec: swap_r8(R8.A),
         };
       case 0x7c:
         return {
@@ -905,6 +933,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ld   l," + hex8(n8),
         exec: ld_r8_n8(R8.L, n8),
       };
+    case 0x2F:
+      return {
+        length,
+        text: "cpl  ",
+        exec: cpl,
+      };
     case 0x30:
       n8 = decodeImm8();
       jaddr = addr + length + u8tos8(n8);
@@ -966,6 +1000,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ld   a," + hex8(n8),
         exec: ld_r8_n8(R8.A, n8),
       };
+    case 0x47:
+      return {
+        length,
+        text: "ld   b,a",
+        exec: ld_r8_r8(R8.B, R8.A),
+      };
     case 0x4F:
       return {
         length,
@@ -1007,6 +1047,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "ld   a,b",
         exec: ld_r8_r8(R8.A, R8.B),
+      };
+    case 0x79:
+      return {
+        length,
+        text: "ld   a,c",
+        exec: ld_r8_r8(R8.A, R8.C),
       };
     case 0x7A:
       return {
@@ -1056,17 +1102,35 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "sub  b",
         exec: sub_r8(R8.B),
       }
+    case 0xA1:
+      return {
+        length,
+        text: "and  c",
+        exec: and_r8(R8.C),
+      };
     case 0xA7:
       return {
         length,
         text: "and  a",
         exec: and_r8(R8.A),
       };
+    case 0xA9:
+      return {
+        length,
+        text: "xor  c",
+        exec: xor_r8(R8.C),
+      };
     case 0xAF:
       return {
         length,
         text: "xor  a",
         exec: xor_r8(R8.A),
+      };
+    case 0xB0:
+      return {
+        length,
+        text: "or   b",
+        exec: or_r8(R8.B),
       };
     case 0xB2:
       return {
