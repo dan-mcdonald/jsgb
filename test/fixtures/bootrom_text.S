@@ -234,3 +234,5 @@ ROM1:470C 7B               ld   a,e
 ROM1:470D B2               or   d
 ROM1:470E 20 F6            jr   nz,4706
 ROM1:4710 C9               ret  
+ROM0:27B5 E5               push hl
+ROM0:27B6 21 00 00         ld   hl,0000

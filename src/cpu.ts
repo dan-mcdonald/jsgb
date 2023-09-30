@@ -988,6 +988,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
           return 8;
         },
       };
+    case 0xE5:
+      return {
+        length,
+        text: "push hl",
+        exec: push_r16(R16.HL),
+      };
     case 0xE6:
       n8 = decodeImm8();
       return {
