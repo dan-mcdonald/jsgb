@@ -882,7 +882,7 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
       return {
         length,
         text: "ld   a," + hex8(n8),
-        exec: ld_r9_n8(R8.A, n8),
+        exec: ld_r8_n8(R8.A, n8),
       };
     case 0x4F:
       return {
