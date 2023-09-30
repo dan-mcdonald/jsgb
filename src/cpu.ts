@@ -536,6 +536,10 @@ function cond_z(cpu: CPU): boolean {
   return cpu.f.Z();
 }
 
+function cond_nz(cpu: CPU): boolean {
+  return !cpu.f.Z();
+}
+
 function cond_c(cpu: CPU): boolean {
   return cpu.f.C();
 }
@@ -789,7 +793,7 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
       return {
         length,
         text: "jr   nz," + hex16(jaddr),
-        exec: jr_cond_addr(cond_z, jaddr),
+        exec: jr_cond_addr(cond_nz, jaddr),
       };
     case 0x21:
       n16 = decodeImm16();
