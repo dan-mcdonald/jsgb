@@ -800,7 +800,13 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "ldd  (hl),a",
         exec: ldd_at_r16_r8(R16.HL, R8.A),
-      }
+      };
+    case 0x3C:
+      return {
+        length,
+        text: "inc  a",
+        exec: inc_r8(R8.A),
+      };
     case 0x3D:
       return {
         length,

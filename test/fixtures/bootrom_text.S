@@ -210,3 +210,16 @@ ROM1:46E4 19               add  hl,de
 ROM1:46E5 CD B5 27         call 27B5
 ROM1:46E8 2A               ldi  a,(hl)
 ROM1:46E9 B9               cp   c
+ROM1:46EA 20 07            jr   nz,46F3
+ROM1:46EC 0C               inc  c
+ROM1:46ED 0C               inc  c
+ROM1:46EE 05               dec  b
+ROM1:46EF 20 F4            jr   nz,46E5
+ROM1:46F1 18 1D            jr   4710
+ROM1:46F3 21 00 A1         ld   hl,A100
+ROM1:46F6 19               add  hl,de
+ROM1:46F7 3E 01            ld   a,01
+ROM1:46F9 CD B5 27         call 27B5
+ROM1:46FC 22               ldi  (hl),a
+ROM1:46FD 3C               inc  a
+ROM1:46FE 3C               inc  a
