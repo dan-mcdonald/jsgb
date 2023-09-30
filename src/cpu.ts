@@ -913,6 +913,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "xor  a",
         exec: (cpu: CPU) => xor(cpu, "a"),
       };
+    case 0xB2:
+      return {
+        length,
+        text: "or   d",
+        exec: or_r8(R8.D),
+      };
     case 0xB9:
       return {
         length,

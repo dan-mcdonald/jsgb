@@ -230,3 +230,7 @@ ROM1:4706 CD B5 27         call 27B5
 ROM1:4709 AF               xor  a
 ROM1:470A 22               ldi  (hl),a
 ROM1:470B 1B               dec  de
+ROM1:470C 7B               ld   a,e
+ROM1:470D B2               or   d
+ROM1:470E 20 F6            jr   nz,4706
+ROM1:4710 C9               ret  
