@@ -341,3 +341,81 @@ RO1F:4017 E0 24            ld   (ff00+24),a
 RO1F:4019 3E FF            ld   a,FF
 RO1F:401B E0 25            ld   (ff00+25),a
 RO1F:401D C9               ret  
+ROM0:0525 F5               push af
+ROM0:0526 C5               push bc
+ROM0:0527 D5               push de
+ROM0:0528 E5               push hl
+ROM0:0529 F3               di   
+ROM0:052A F0 FD            ld   a,(ff00+FD)
+ROM0:052C A7               and  a
+ROM0:052D C2 B6 05         jp   nz,05B6
+ROM0:0530 FA 9F C1         ld   a,(C19F)
+ROM0:0533 E6 7F            and  a,7F
+ROM0:0535 28 2F            jr   z,0566
+ROM0:0537 FE 01            cp   a,01
+ROM0:0539 28 2B            jr   z,0566
+ROM0:053B FE 05            cp   a,05
+ROM0:053D 30 09            jr   nc,0548
+ROM0:053F CD DF 21         call 21DF
+ROM0:0542 21 9F C1         ld   hl,C19F
+ROM0:0545 34               inc  (hl)
+ROM0:0546 18 6E            jr   05B6
+ROM0:0548 FE 0A            cp   a,0A
+ROM0:054A 20 05            jr   nz,0551
+ROM0:054C CD A5 25         call 25A5
+ROM0:054F 18 65            jr   05B6
+ROM0:0551 FE 0B            cp   a,0B
+ROM0:0553 20 11            jr   nz,0566
+ROM0:0555 FA 72 C1         ld   a,(C172)
+ROM0:0558 A7               and  a
+ROM0:0559 28 06            jr   z,0561
+ROM0:055B 3D               dec  a
+ROM0:055C EA 72 C1         ld   (C172),a
+ROM0:055F 18 05            jr   0566
+ROM0:0561 CD F9 25         call 25F9
+ROM0:0564 18 50            jr   05B6
+ROM0:0566 FA FE D6         ld   a,(D6FE)
+ROM0:0569 A7               and  a
+ROM0:056A 20 4A            jr   nz,05B6
+ROM0:056C F0 90            ld   a,(ff00+90)
+ROM0:056E E0 E8            ld   (ff00+E8),a
+ROM0:0570 21 91 FF         ld   hl,FF91
+ROM0:0573 B6               or   (hl)
+ROM0:0574 21 0E C1         ld   hl,C10E
+ROM0:0577 B6               or   (hl)
+ROM0:0578 28 11            jr   z,058B
+ROM0:057A CD C0 05         call 05C0
+ROM0:057D F0 E8            ld   a,(ff00+E8)
+ROM0:057F FE 08            cp   a,08
+ROM0:0581 30 03            jr   nc,0586
+ROM0:0583 CD CC 1C         call 1CCC
+ROM0:0586 CD C0 FF         call FFC0
+ROM0:0589 18 2B            jr   05B6
+ROM0:058B F0 BB            ld   a,(ff00+BB)
+ROM0:058D A7               and  a
+ROM0:058E 28 13            jr   z,05A3
+ROM0:0590 3D               dec  a
+ROM0:0591 E0 BB            ld   (ff00+BB),a
+ROM0:0593 5F               ld   e,a
+ROM0:0594 16 00            ld   d,00
+ROM0:0596 21 23 05         ld   hl,0523
+ROM0:0599 19               add  hl,de
+ROM0:059A 7E               ld   a,(hl)
+ROM0:059B EA F8 D6         ld   (D6F8),a
+ROM0:059E CD EE 1D         call 1DEE
+ROM0:05A1 18 E0            jr   0583
+ROM0:05A3 CD A9 1A         call 1AA9
+ROM0:05A6 11 01 D6         ld   de,D601
+ROM0:05A9 CD D8 28         call 28D8
+ROM0:05AC AF               xor  a
+ROM0:05AD EA 00 D6         ld   (D600),a
+ROM0:05B0 EA 01 D6         ld   (D601),a
+ROM0:05B3 CD C0 FF         call FFC0
+ROM0:05B6 FB               ei   
+ROM0:05B7 E1               pop  hl
+ROM0:05B8 D1               pop  de
+ROM0:05B9 C1               pop  bc
+ROM0:05BA 3E 01            ld   a,01
+ROM0:05BC E0 D1            ld   (ff00+D1),a
+ROM0:05BE F1               pop  af
+ROM0:05BF D9               reti 

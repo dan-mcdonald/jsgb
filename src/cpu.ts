@@ -248,6 +248,11 @@ function ei(cpu: CPU, _: Bus): number {
   return 4;
 }
 
+function di(cpu: CPU, _: Bus): number {
+  cpu.ime = false;
+  return 4;
+}
+
 function res_r8(bit: number, reg: R8): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
     const val = get8(cpu, reg);
@@ -285,6 +290,13 @@ function or_r8(reg: R8): InstructionFunction {
     or(cpu, get8(cpu, reg));
     return 4;
   };
+}
+
+function or_at_HL(cpu: CPU, bus: Bus): number {
+  const addr = get16(cpu, R16.HL);
+  const val = bus.readb(addr);
+  or(cpu, val);
+  return 8;
 }
 
 function ld_r16_n16(target: R16, val: number): InstructionFunction {
@@ -419,6 +431,15 @@ function inc_r8(reg: R8): InstructionFunction {
   }
 }
 
+function inc_at_HL(cpu: CPU, bus: Bus): number {
+  const addr = get16(cpu, R16.HL);
+  const oldVal = bus.readb(addr);
+  const newVal = (oldVal + 1) & 0xff;
+  bus.writeb(addr, newVal);
+  cpu.f = cpu.f.setZ(newVal === 0).setN(false).setH((oldVal & 0xf) == 0xf);
+  return 12;
+}
+
 function dec_r8(reg: R8): InstructionFunction {
   return function (cpu: CPU, _: Bus) {
     const oldVal = get8(cpu, reg);
@@ -463,6 +484,12 @@ function call(addr: number): InstructionFunction {
     cpu.pc = addr;
     return 12;
   }
+}
+
+function reti(cpu: CPU, bus: Bus): number {
+  cpu.ime = true;
+  cpu.pc = pop16(cpu, bus);
+  return 16;
 }
 
 function cp(cpu: CPU, val: number): void {
@@ -542,6 +569,10 @@ function cond_nz(cpu: CPU): boolean {
 
 function cond_c(cpu: CPU): boolean {
   return cpu.f.C();
+}
+
+function cond_nc(cpu: CPU): boolean {
+  return !cpu.f.C();
 }
 
 function jr_cond_addr(cond: (cpu: CPU) => boolean, addr: number): InstructionFunction {
@@ -847,6 +878,14 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ld   l," + hex8(n8),
         exec: ld_r8_n8(R8.L, n8),
       };
+    case 0x30:
+      n8 = decodeImm8();
+      jaddr = addr + length + u8tos8(n8);
+      return {
+        length,
+        text: "jr   nc," + hex16(jaddr),
+        exec: jr_cond_addr(cond_nc, jaddr),
+      };
     case 0x31:
       n16 = decodeImm16();
       return {
@@ -859,6 +898,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "ldd  (hl),a",
         exec: ldd_at_r16_r8(R16.HL, R8.A),
+      };
+    case 0x34:
+      return {
+        length,
+        text: "inc  (hl)",
+        exec: inc_at_HL,
       };
     case 0x36:
       n8 = decodeImm8();
@@ -906,6 +951,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ld   d,a",
         exec: ld_r8_r8(R8.D, R8.A),
       };
+    case 0x5F:
+      return {
+        length,
+        text: "ld   e,a",
+        exec: ld_r8_r8(R8.E, R8.A),
+      };
     case 0x67:
       return {
         length,
@@ -948,6 +999,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ld   a,l",
         exec: ld_r8_r8(R8.A, R8.L),
       };
+    case 0x7E:
+      return {
+        length,
+        text: "ld   a,(hl)",
+        exec: ld_r8_at_r16(R8.A, R16.HL),
+      };
     case 0x86:
       return {
         length,
@@ -978,6 +1035,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "or   d",
         exec: or_r8(R8.D),
       };
+    case 0xB6:
+      return {
+        length,
+        text: "or   (hl)",
+        exec: or_at_HL,
+      };
     case 0xB9:
       return {
         length,
@@ -1001,6 +1064,13 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "pop  bc",
         exec: pop_r16(R16.BC),
+      };
+    case 0xC2:
+      n16 = decodeImm16();
+      return {
+        length,
+        text: "jp   nz," + hex16(n16),
+        exec: jp_cond_addr(cond_nz, n16),
       };
     case 0xC3:
       n16 = decodeImm16();
@@ -1036,6 +1106,24 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "call " + hex16(n16),
         exec: call(n16),
+      };
+    case 0xD1:
+      return {
+        length,
+        text: "pop  de",
+        exec: pop_r16(R16.DE),
+      };
+    case 0xD5:
+      return {
+        length,
+        text: "push de",
+        exec: push_r16(R16.DE),
+      };
+    case 0xD9:
+      return {
+        length,
+        text: "reti ",
+        exec: reti,
       };
     case 0xE0:
       n8 = decodeImm8();
@@ -1087,6 +1175,24 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ld   a,(ff00+" + hex8(n8) + ")",
         exec: ld_r8_at_addr(R8.A, 0xff00 + n8),
       };
+    case 0xF1:
+      return {
+        length,
+        text: "pop  af",
+        exec: pop_r16(R16.AF),
+      };
+    case 0xF3:
+      return {
+        length,
+        text: "di   ",
+        exec: di,
+      };
+    case 0xF5:
+      return {
+        length,
+        text: "push af",
+        exec: push_r16(R16.AF),
+      };  
     case 0xFA:
       n16 = decodeImm16();
       return {
