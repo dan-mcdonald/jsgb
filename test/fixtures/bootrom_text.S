@@ -239,3 +239,91 @@ ROM0:27B6 21 00 00         ld   hl,0000
 ROM0:27B9 36 0A            ld   (hl),0A
 ROM0:27BB E1               pop  hl
 ROM0:27BC C9               ret  
+ROM1:460F 11 00 00         ld   de,0000
+ROM1:4612 CD DD 46         call 46DD
+ROM1:4615 11 85 03         ld   de,0385
+ROM1:4618 CD DD 46         call 46DD
+ROM1:461B 11 0A 07         ld   de,070A
+ROM1:461E CD DD 46         call 46DD
+ROM1:4621 FA 03 00         ld   a,(0003)
+ROM1:4624 A7               and  a
+ROM1:4625 CA DC 46         jp   z,46DC
+ROM1:4628 1E 00            ld   e,00
+ROM1:462A 16 00            ld   d,00
+ROM1:462C 01 05 A4         ld   bc,A405
+ROM1:462F 21 CC 45         ld   hl,45CC
+ROM1:4632 19               add  hl,de
+ROM1:4633 2A               ldi  a,(hl)
+ROM1:4634 02               ld   (bc),a
+ROM1:4635 03               inc  bc
+ROM1:4636 1C               inc  e
+ROM1:4637 7B               ld   a,e
+ROM1:4638 FE 43            cp   a,43
+ROM1:463A 20 F3            jr   nz,462F
+ROM1:463C 3E 01            ld   a,01
+ROM1:463E EA 53 A4         ld   (A453),a
+ROM1:4641 3E 01            ld   a,01
+ROM1:4643 EA 49 A4         ld   (A449),a
+ROM1:4646 3E 02            ld   a,02
+ROM1:4648 EA 48 A4         ld   (A448),a
+ROM1:464B 21 6A A4         ld   hl,A46A
+ROM1:464E 1E 09            ld   e,09
+ROM1:4650 3E 02            ld   a,02
+ROM1:4652 22               ldi  (hl),a
+ROM1:4653 1D               dec  e
+ROM1:4654 20 FC            jr   nz,4652
+ROM1:4656 3E 60            ld   a,60
+ROM1:4658 EA 52 A4         ld   (A452),a
+ROM1:465B EA 7D A4         ld   (A47D),a
+ROM1:465E EA 7C A4         ld   (A47C),a
+ROM1:4661 EA 4A A4         ld   (A44A),a
+ROM1:4664 3E 40            ld   a,40
+ROM1:4666 EA 7B A4         ld   (A47B),a
+ROM1:4669 EA 51 A4         ld   (A451),a
+ROM1:466C 3E 89            ld   a,89
+ROM1:466E EA 4C A4         ld   (A44C),a
+ROM1:4671 3E 00            ld   a,00
+ROM1:4673 EA 14 A4         ld   (A414),a
+ROM1:4676 3E 07            ld   a,07
+ROM1:4678 EA 4E A4         ld   (A44E),a
+ROM1:467B 3E 05            ld   a,05
+ROM1:467D EA 62 A4         ld   (A462),a
+ROM1:4680 3E 09            ld   a,09
+ROM1:4682 EA 63 A4         ld   (A463),a
+ROM1:4685 3E 01            ld   a,01
+ROM1:4687 EA 4D A4         ld   (A44D),a
+ROM1:468A 3E 50            ld   a,50
+ROM1:468C EA 5F A4         ld   (A45F),a
+ROM1:468F 3E 0A            ld   a,0A
+ROM1:4691 EA 60 A4         ld   (A460),a
+ROM1:4694 3E 5B            ld   a,5B
+ROM1:4696 EA 54 A4         ld   (A454),a
+ROM1:4699 3E 46            ld   a,46
+ROM1:469B EA 55 A4         ld   (A455),a
+ROM1:469E 3E 4D            ld   a,4D
+ROM1:46A0 EA 56 A4         ld   (A456),a
+ROM1:46A3 3E 45            ld   a,45
+ROM1:46A5 EA 57 A4         ld   (A457),a
+ROM1:46A8 3E 42            ld   a,42
+ROM1:46AA EA 58 A4         ld   (A458),a
+ROM1:46AD 3E 00            ld   a,00
+ROM1:46AF EA 5C A4         ld   (A45C),a
+ROM1:46B2 EA 5D A4         ld   (A45D),a
+ROM1:46B5 3E 00            ld   a,00
+ROM1:46B7 EA 5B A4         ld   (A45B),a
+ROM1:46BA EA 64 A4         ld   (A464),a
+ROM1:46BD 3E 00            ld   a,00
+ROM1:46BF EA 65 A4         ld   (A465),a
+ROM1:46C2 3E 92            ld   a,92
+ROM1:46C4 EA 66 A4         ld   (A466),a
+ROM1:46C7 3E 48            ld   a,48
+ROM1:46C9 EA 67 A4         ld   (A467),a
+ROM1:46CC 3E 62            ld   a,62
+ROM1:46CE EA 68 A4         ld   (A468),a
+ROM1:46D1 21 05 A1         ld   hl,A105
+ROM1:46D4 3E 80            ld   a,80
+ROM1:46D6 1E 00            ld   e,00
+ROM1:46D8 22               ldi  (hl),a
+ROM1:46D9 1D               dec  e
+ROM1:46DA 20 FC            jr   nz,46D8
+ROM1:46DC C9               ret  
