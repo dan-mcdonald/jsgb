@@ -1,5 +1,5 @@
 import { Bus } from "./bus";
-import { hex8, hex16, u8tos8, make16, break16 } from "./util";
+import { hex8, hex16, u8tos8, make16, break16, hexs8 } from "./util";
 import { interruptVector, interruptPending, clearInterrupt } from "./interrupt";
 
 type InstructionFunction = (cpu: CPU, bus: Bus) => number;
@@ -928,6 +928,7 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
   const opcode = decodeImm8();
   let n16: number;
   let n8: number;
+  let s8: number;
   let jaddr: number;
   function decodeCbInsn(): Instruction {
     const opcode = bus.readb(addr + length++);
@@ -2370,6 +2371,13 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "reti ",
         exec: reti,
       };
+    case 0xDA:
+      n16 = decodeImm16();
+      return {
+        length,
+        text: "jp   c," + hex16(n16),
+        exec: jp_cond_addr(cond_c, n16),
+      };
     // 0xDB is undefined
     case 0xDC:
       n16 = decodeImm16();
@@ -2438,10 +2446,11 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
       };
     case 0xE8:
       n8 = decodeImm8();
+      s8 = u8tos8(n8);
       return {
         length,
-        text: "add  sp," + hex8(u8tos8(n8)),
-        exec: add_SP_s8(u8tos8(n8)),
+        text: "add  sp," + hexs8(s8),
+        exec: add_SP_s8(s8),
       };
     case 0xE9:
       return {
@@ -2519,10 +2528,11 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
       };
     case 0xF8:
       n8 = decodeImm8();
+      s8 = u8tos8(n8);
       return {
         length,
-        text: "ld   hl,sp" + (n8 >= 0x80 ? "" : "+") + hex8(u8tos8(n8)),
-        exec: ld_HL_SP_plus_n8(u8tos8(n8)),
+        text: "ld   hl,sp" + hexs8(s8),
+        exec: ld_HL_SP_plus_n8(s8),
       };
     case 0xF9:
       return {
