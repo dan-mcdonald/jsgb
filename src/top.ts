@@ -14,18 +14,18 @@ import {hex8, hex16} from "./util";
 
 export async function loadBootRom(): Promise<Uint8Array> {
   // https://gbdev.gg8.se/wiki/articles/Gameboy_Bootstrap_ROM
-  const resp = await fetch("DMG_ROM.bin")
+  const resp = await fetch("DMG_ROM.bin");
   const buf = await resp.arrayBuffer();
   return new Uint8Array(buf);
 }
 
 export async function loadCart(): Promise<Uint8Array> {
-  const resp = await fetch("game.gb");
+  const resp = await fetch("cpu_instrs.gb");
   const buf = await resp.arrayBuffer();
   return new Uint8Array(buf);
 }
 
-const getScreenContext = function(): CanvasRenderingContext2D {
+function getScreenContext(): CanvasRenderingContext2D {
   const screenCanvas = document.getElementById("screen") as HTMLCanvasElement;
   const screenContext = screenCanvas.getContext("2d");
   if (screenContext === null) {
@@ -36,7 +36,7 @@ const getScreenContext = function(): CanvasRenderingContext2D {
   return screenContext;
 }
 
-const updateDebugInfo = function(cpu: CPU.CPU, bus: Bus, cycleCount: number, runState: RunState): void {
+function updateDebugInfo(cpu: CPU.CPU, bus: Bus, cycleCount: number, runState: RunState): void {
   const debugDiv = window.document.getElementById("debug");
   if (debugDiv === null) {
     throw new Error("debug div missing");
@@ -192,14 +192,14 @@ export async function main (): Promise<void> {
   while (true) {
     const handle = startEmulator(bootRom, cart, screenContext);
 
-    runButton.onclick = function() { handle.run(); }
-    stepButton.onclick = function() { handle.step(); }
+    runButton.onclick = function() { handle.run(); };
+    stepButton.onclick = function() { handle.step(); };
     window.document.onkeydown = function(e: KeyboardEvent): void {
       if (e.code == "F3") {
         handle.step();
         e.preventDefault(); // prevent browser from opening search box
       }
-    }
+    };
     await new Promise<void>(function(resolve, _) {
       resetButton.onclick = function() { 
         console.log("reset clicked");

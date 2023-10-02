@@ -68,6 +68,9 @@ export function cartWrite(cart: Cart, addr: number, val: number): void {
   } else if (addr >= 0x2000 && addr <= 0x3fff) {
     cart.bank1Idx = Math.max(val, 1);
     console.log(`bank 1 selects ${hex8(cart.bank1Idx)}`);
+    if (cart.bank1Idx * 0x4000 >= cart.rom.length) {
+      throw new Error(`bank 1 selects out of bounds ${hex8(cart.bank1Idx)}`);
+    }
   } else if (addr >= 0xa000 && addr <= 0xbfff && cart.ram != null && cart.ramEnable) {
     cart.ram[addr - 0xa000] = val;
   } else {

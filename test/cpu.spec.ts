@@ -1,4 +1,4 @@
-import { Flags, initCPU, step, maskZ, decodeInsn, pop_r16, R16, push_r16, ldi_at_r16_r8, OP8, ldd_at_r16_r8, dec_r16 } from "../src/cpu";
+import { Flags, initCPU, step, maskZ, decodeInsn, pop_r16, R16, push_r16, ldi_at_r16_r8, OP8, ldd_at_r16_r8, dec_r16, add_r16_r16 } from "../src/cpu";
 import { expect } from 'chai';
 import { BusRead, BusWrite } from "../src/bus";
 import buildBus from "../src/buildBus";
@@ -210,18 +210,27 @@ describe("push bc", (): void => {
   });
 });
 
-// describe("swap a", (): void => {
-//   const readb = (addr: number): number => [0xcb, 0x37][addr];
-//   const writeb = (_: number, __: number): void => { };
-//   const bus = { readb, writeb };
+describe("swap a", (): void => {
+  const readb = (addr: number): number => [0xcb, 0x37][addr];
+  const writeb = (_: number, __: number): void => { };
+  const bus = { readb, writeb };
 
-//   it("swaps a5 -> 5a", () => {
-//     const cpu = initCPU();
-//     cpu.regs.a = 0xa5;
-//     step(cpu, bus);
-//     expect(cpu.regs.a).to.equal(0x5a);
-//   });
-// });
+  it("swaps a5 -> 5a", () => {
+    const cpu = initCPU();
+    cpu.regs.a = 0xa5;
+    step(cpu, bus);
+    expect(cpu.regs.a).to.equal(0x5a);
+  });
+});
+
+describe("add hl,hl", (): void => {
+  const cpu = initCPU();
+  cpu.regs.h = 0x26;
+  cpu.regs.l = 0x00;
+  add_r16_r16(R16.HL, R16.HL)(cpu, {readb: readb_error, writeb: writeb_error});
+  expect(cpu.regs.h).to.equal(0x4c);
+  expect(cpu.regs.l).to.equal(0x00);
+});
 
 function loadBootRom(): Promise<Uint8Array> {
   return readFile("dist/DMG_ROM.bin");
