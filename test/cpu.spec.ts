@@ -10,19 +10,38 @@ import { audioInit } from "../src/audio";
 import { load as bessLoad } from "../src/bess";
 import { hex16, hex8 } from "../src/util";
 import { EOL } from "os";
+import { globSync as glob } from "glob";
+import { basename } from "path";
 
 const readb_error = (_: number): number => {throw new Error("unexpected read");};
 const writeb_error = (_: number, __: number): void => {throw new Error("unexpected write");};
 
-function loadDecodeInsnTestCases(): { addr: number, bytes: number[], disasm: string }[] {
-  const disasmContent = readFileSync("test/fixtures/bootrom_text.S", {encoding: "utf-8"});
-  function lineToTestCase(line: string): { addr: number, bytes: number[], disasm: string } {
+interface DisasmTestCase { file: string, addr: number, bytes: number[], disasm: string }
+
+function loadDecodeInsnTestCasesFile(path: string): DisasmTestCase[] {
+  const disasmContent = readFileSync(path, {encoding: "utf-8"});
+  const file = basename(path);
+  function lineToTestCase(line: string): DisasmTestCase {
     const addr = parseInt(line.slice(5, 9), 16);
     const bytes = line.slice(10, 26).split(" ").filter((s) => s.length > 0).map((b) => parseInt(b, 16));
     const disasm = line.slice(27);
-    return {addr, bytes, disasm};
+    return { file, addr, bytes, disasm };
   }
-  return disasmContent.split(EOL).filter((line) => line.length > 0).map(lineToTestCase);
+  return disasmContent.split(EOL).filter((line) => line.length > 0).map(lineToTestCase).filter((tc) => !tc.disasm.startsWith("db "));
+}
+
+function loadDecodeInsnTestCases(): DisasmTestCase[] {
+  const files: string[] = glob("test/fixtures/*.S");
+  const allCases = files.flatMap(loadDecodeInsnTestCasesFile);
+  const uniqueCases: DisasmTestCase[] = [];
+  const disasmSet = new Set<string>();
+  for(const testCase of allCases) {
+    if (!disasmSet.has(testCase.disasm)) {
+      uniqueCases.push(testCase);
+      disasmSet.add(testCase.disasm);
+    }
+  }
+  return uniqueCases;
 }
 
 describe("decodeInsn", (): void => {
@@ -37,7 +56,7 @@ describe("decodeInsn", (): void => {
       return testCase.bytes[addr - testCase.addr];
     }
     const bus = { readb, writeb };
-    it(hex16(testCase.addr) + ": " + byteText + " => " + testCase.disasm, () => {
+    it(`[${testCase.file}] ${hex16(testCase.addr)}: ${byteText} => ${testCase.disasm}`, () => {
       expect(decodeInsn(testCase.addr, bus).text).to.equal(testCase.disasm)
     })
   }
