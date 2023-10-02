@@ -5,7 +5,7 @@ import { createCanvas, loadImage, ImageData } from 'canvas';
 import type { ImageData as NodeImageData, Image as NodeImage } from 'canvas';
 // import { pipeline } from 'node:stream/promises';
 // import { createWriteStream } from 'node:fs';
-import { readFile } from "node:fs/promises"
+import { readFile } from "node:fs/promises";
 
 // use canvas to polyfill ImageData when running tests in node
 (global as { [key: string]: any })["ImageData"] = ImageData; // eslint-disable-line @typescript-eslint/no-explicit-any

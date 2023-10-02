@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { detect, headerOffset, load } from "../src/bess";
-import { readFile } from "node:fs/promises"
+import { readFile } from "node:fs/promises";
 
 describe("bess", (): void => {
   it("detect positive", async (): Promise<void> => {
