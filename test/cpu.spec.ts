@@ -54,11 +54,11 @@ describe("decodeInsn", (): void => {
         throw Error(`read for address ${hex16(addr)} out of range`);
       }
       return testCase.bytes[addr - testCase.addr];
-    }
+    };
     const bus = { readb, writeb };
     it(`[${testCase.file}] ${hex16(testCase.addr)}: ${byteText} => ${testCase.disasm}`, () => {
-      expect(decodeInsn(testCase.addr, bus).text).to.equal(testCase.disasm)
-    })
+      expect(decodeInsn(testCase.addr, bus).text).to.equal(testCase.disasm);
+    });
   }
 });
 
@@ -175,7 +175,7 @@ describe("dec_r16", () => {
 
 describe("pop bc", (): void => {
   it("pops 0x04CE", (): void => {
-    const cpu = initCPU()
+    const cpu = initCPU();
     cpu.regs.sp = 0xfffa;
     function readb(addr: number): number {
       switch (addr) {
@@ -194,7 +194,7 @@ describe("pop bc", (): void => {
 
 describe("push bc", (): void => {
   it("pushes 0x04CE", (): void => {
-    const cpu = initCPU()
+    const cpu = initCPU();
     cpu.regs.sp = 0xfffc;
     cpu.regs.b = 0x04;
     cpu.regs.c = 0xce;

@@ -267,6 +267,16 @@ function di(cpu: CPU, _: Bus): number {
   return 4;
 }
 
+function scf(cpu: CPU, _: Bus): number {
+  cpu.f = cpu.f.setN(false).setH(false).setC(true);
+  return 4;
+}
+
+function ccf(cpu: CPU, _: Bus): number {
+  cpu.f = cpu.f.setN(false).setH(false).setC(!cpu.f.C());
+  return 4;
+}
+
 function res_r8(bit: number, reg: R8): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
     const val = get8(cpu, reg);
@@ -292,7 +302,7 @@ function and_n8(val: number): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
     and(cpu, val);
     return 8;
-  }
+  };
 }
 
 function and_r8(reg: R8): InstructionFunction {
@@ -396,7 +406,7 @@ function ld_at_n16_r8(destAddr: number, valReg: R8): (cpu: CPU, bus: Bus) => num
     const val = get8(cpu, valReg);
     bus.writeb(destAddr, val);
     return 8;
-  }
+  };
 }
 
 function dec16(cpu: CPU, reg: R16): void {
@@ -433,6 +443,14 @@ export function ldd_at_r16_r8(destAddrReg: R16, val: R8): (cpu: CPU, bus: Bus) =
   };
 }
 
+export function ldd_r8_at_r16(destAddrReg: R8, atRegSrc: R16.HL): InstructionFunction {
+  return function (cpu: CPU, bus: Bus): number {
+    ld_r8_at_r16(destAddrReg, atRegSrc)(cpu, bus);
+    dec16(cpu, atRegSrc);
+    return 8;
+  };
+}
+
 export function ldi_at_r16_r8(destAddrReg: R16, val: R8): (cpu: CPU, bus: Bus) => number {
   return function (cpu: CPU, bus: Bus): number {
     ld_at_r16_r8(destAddrReg, val)(cpu, bus);
@@ -465,6 +483,15 @@ function ld_at_n8_r8(destAddr: number, fromReg: R8): InstructionFunction {
   };
 }
 
+function ld_r8_at_r8(destReg: R8, srcAddrReg: R8): InstructionFunction {
+  return function(cpu: CPU, bus: Bus): number {
+    const addr = 0xff00 + get8(cpu, srcAddrReg);
+    const val = bus.readb(addr);
+    set8(cpu, destReg, val);
+    return 8;
+  };
+}
+
 function ld_r8_n8(dest: R8, val: number): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
     set8(cpu, dest, val);
@@ -479,7 +506,7 @@ function inc_r8(reg: R8): InstructionFunction {
     set8(cpu, reg, newVal);
     cpu.f = cpu.f.setZ(newVal === 0).setN(false).setH((oldVal & 0xf) == 0xf);
     return 4;
-  }
+  };
 }
 
 function inc_at_HL(cpu: CPU, bus: Bus): number {
@@ -491,15 +518,29 @@ function inc_at_HL(cpu: CPU, bus: Bus): number {
   return 12;
 }
 
+function dec(cpu: CPU, val: number): number {
+  const newVal = (val - 1) & 0xff;
+  cpu.f = cpu.f.setZ(newVal === 0).setN(true).setH((val & 0xf) == 0);
+  return newVal;
+}
+
 function dec_r8(reg: R8): InstructionFunction {
   return function (cpu: CPU, _: Bus) {
     const oldVal = get8(cpu, reg);
-    const newVal = (oldVal - 1) & 0xff;
+    const newVal = dec(cpu, oldVal);
     set8(cpu, reg, newVal);
-    cpu.f = cpu.f.setZ(newVal === 0).setN(true).setH((oldVal & 0xf) == 0xf);
     return 4;
-  }
+  };
 }
+
+function dec_at_HL(cpu: CPU, bus: Bus): number {
+  const addr = get16(cpu, R16.HL);
+  const oldVal = bus.readb(addr);
+  const newVal = dec(cpu, oldVal);
+  bus.writeb(addr, newVal);
+  return 12;
+}
+
 function push16(cpu: CPU, bus: Bus, val: number): void {
   const [hi, lo] = break16(val);
   cpu.regs.sp -= 2;
@@ -519,14 +560,14 @@ export function pop_r16(reg: R16): InstructionFunction {
     const val = pop16(cpu, bus);
     set16(cpu, reg, val);
     return 16;
-  }
+  };
 }
 
 export function push_r16(reg: R16): InstructionFunction {
   return function (cpu: CPU, bus: Bus): number {
     push16(cpu, bus, get16(cpu, reg));
     return 16;
-  }
+  };
 }
 
 function call(addr: number): InstructionFunction {
@@ -534,7 +575,7 @@ function call(addr: number): InstructionFunction {
     push16(cpu, bus, cpu.pc);
     cpu.pc = addr;
     return 24;
-  }
+  };
 }
 
 function call_cond(pred: CpuCond, addr: number): InstructionFunction {
@@ -553,7 +594,7 @@ function rst(addr: number): InstructionFunction {
     push16(cpu, bus, cpu.pc);
     cpu.pc = addr;
     return 16;
-  }
+  };
 }
 
 function reti(cpu: CPU, bus: Bus): number {
@@ -591,14 +632,14 @@ function cp_n8(val: number): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
     cp(cpu, val);
     return 4;
-  }
+  };
 }
 
 function cp_r8(reg: R8): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
     cp(cpu, get8(cpu, reg));
     return 4;
-  }
+  };
 }
 
 function cp_at_HL(cpu: CPU, bus: Bus): number {
@@ -620,14 +661,21 @@ function sub_r8(reg: R8): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
     sub(cpu, get8(cpu, reg));
     return 4;
-  }
+  };
 }
 
 function sub_n8(val: number): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
     sub(cpu, val);
     return 8;
-  }
+  };
+}
+
+function sub_at_HL(cpu: CPU, bus: Bus): number {
+  const addr = get16(cpu, R16.HL);
+  const val = bus.readb(addr);
+  sub(cpu, val);
+  return 8;
 }
 
 function cpl(cpu: CPU, _: Bus): number {
@@ -692,7 +740,7 @@ function add_r16_r16(dest: R16, addend: R16): InstructionFunction {
   return function(cpu: CPU, _: Bus): number {
     add16(cpu, dest, addend);
     return 8;
-  }
+  };
 }
 
 function cond_z(cpu: CPU): boolean {
@@ -735,7 +783,7 @@ function jp_addr(addr: number): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
     cpu.pc = addr;
     return 12;
-  }
+  };
 }
 
 function jp_HL(cpu: CPU, _: Bus): number {
@@ -776,17 +824,40 @@ function rl_r8(reg: R8): InstructionFunction {
     set8(cpu, reg, newVal & 0xff);
     cpu.f = cpu.f.setZ(newVal === 0).setN(false).setH(false).setC((oldVal & 0x80) !== 0);
     return 8;
-  }
+  };
+}
+
+function rr(cpu: CPU, val: number): number {
+  const newVal = ((val >> 1) | (val << 7)) & 0xff;
+  cpu.f = cpu.f.setZ(newVal == 0).setN(false).setH(false).setC((val & 0x01) !== 0);
+  return newVal;
 }
 
 function rr_r8(reg: R8): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
     const oldVal = get8(cpu, reg);
-    const newVal = ((oldVal >> 1) | (cpu.f.C() ? 0x80 : 0x00)) & 0xff;
-    set8(cpu, reg, newVal & 0xff);
-    cpu.f = cpu.f.setZ(newVal === 0).setN(false).setH(false).setC((oldVal & 0x01) !== 0);
+    const newVal = rr(cpu, oldVal);
+    set8(cpu, reg, newVal);
     return 8;
-  }
+  };
+}
+
+function rr_at_HL(cpu: CPU, bus: Bus): number {
+  const addr = get16(cpu, R16.HL);
+  const val = bus.readb(addr);
+  const newVal = rr(cpu, val);
+  bus.writeb(addr, newVal);
+  return 16;
+}
+
+// Rotate right (not through carry) A
+// NB subtly different than rrc because Z is always cleared and timing is faster
+function rrca(cpu: CPU, _: Bus): number {
+  const oldVal = cpu.regs.a;
+  const newVal = ((oldVal >> 1) | (oldVal << 7)) & 0xff;
+  cpu.regs.a = newVal;
+  cpu.f = cpu.f.setZ(false).setN(false).setH(false).setC((oldVal & 0x01) !== 0);
+  return 4;
 }
 
 function srl(cpu: CPU, val: number): number {
@@ -818,7 +889,53 @@ function adc_n8(val: number): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
     adc(cpu, val);
     return 8;
-  }
+  };
+}
+
+function adc_r8(reg: R8): InstructionFunction {
+  return function (cpu: CPU, _: Bus): number {
+    adc(cpu, get8(cpu, reg));
+    return 4;
+  };
+}
+
+function adc_at_HL(cpu: CPU, bus: Bus): number {
+  const addr = get16(cpu, R16.HL);
+  const val = bus.readb(addr);
+  adc(cpu, val);
+  return 8;
+}
+
+function sbc(cpu: CPU, val: number): void {
+  const oldA = cpu.regs.a;
+  const newVal = (oldA - val - (cpu.f.C() ? 1 : 0)) & 0xff;
+  cpu.regs.a = newVal;
+  cpu.f = cpu.f
+    .setZ(newVal === 0)
+    .setN(true)
+    .setH((oldA & 0xf) < (val & 0xf) + (cpu.f.C() ? 1 : 0))
+    .setC(oldA < val + (cpu.f.C() ? 1 : 0));
+}
+
+function sbc_at_HL(cpu: CPU, bus: Bus): number {
+  const addr = get16(cpu, R16.HL);
+  const val = bus.readb(addr);
+  sbc(cpu, val);
+  return 8;
+}
+
+function sbc_r8(reg: R8): InstructionFunction {
+  return function (cpu: CPU, _: Bus): number {
+    sbc(cpu, get8(cpu, reg));
+    return 4;
+  };
+}
+
+function sbc_n8(val: number): InstructionFunction {
+  return function (cpu: CPU, _: Bus): number {
+    sbc(cpu, val);
+    return 8;
+  };
 }
 
 function sla(cpu: CPU, val: number): number {
@@ -876,6 +993,42 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
           length,
           text: "rr   d",
           exec: rr_r8(R8.D),
+        };
+      case 0x1B:
+        return {
+          length,
+          text: "rr   e",
+          exec: rr_r8(R8.E),
+        };
+      case 0x1C:
+        return {
+          length,
+          text: "rr   h",
+          exec: rr_r8(R8.H),
+        };
+      case 0x1D:
+        return {
+          length,
+          text: "rr   l",
+          exec: rr_r8(R8.L),
+        };
+      case 0x1E:
+        return {
+          length,
+          text: "rr   (hl)",
+          exec: rr_at_HL,
+        };
+      case 0x1F:
+        return {
+          length,
+          text: "rr   a",
+          exec: rr_r8(R8.A),
+        };
+      case 0x20:
+        return {
+          length,
+          text: "sla  b",
+          exec: sla_r8(R8.B),
         };
       case 0x23:
         return {
@@ -1019,11 +1172,17 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ld   c," + hex8(n8),
         exec: ld_r8_n8(R8.C, n8),
       };
-    case 0x10:
-      decodeImm8();
+    case 0x0F:
       return {
         length,
-        text: "stop",
+        text: "rrca ",
+        exec: rrca,
+      };
+    case 0x10:
+      n8 = decodeImm8();
+      return {
+        length,
+        text: n8 == 0x00 ? "stop" : "<corrupted stop>",
         exec: stop,
       };
     case 0x11:
@@ -1083,7 +1242,7 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "add  hl,de",
         exec: add_r16_r16(R16.HL, R16.DE),
-      }
+      };
     case 0x1A:
       return {
         length,
@@ -1175,6 +1334,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "jr   z," + hex16(jaddr),
         exec: jr_cond_addr(cond_z, jaddr),
       };
+    case 0x29:
+      return {
+        length,
+        text: "add  hl,hl",
+        exec: add_r16_r16(R16.HL, R16.HL),
+      };
     case 0x2A:
       return {
         length,
@@ -1233,12 +1398,24 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "inc  (hl)",
         exec: inc_at_HL,
       };
+    case 0x35:
+      return {
+        length,
+        text: "dec  (hl)",
+        exec: dec_at_HL,
+      };
     case 0x36:
       n8 = decodeImm8();
       return {
         length,
         text: "ld   (hl)," + hex8(n8),
         exec: ld_at_r16_n8(R16.HL, n8),
+      };
+    case 0x37:
+      return {
+        length,
+        text: "scf  ",
+        exec: scf,
       };
     case 0x38:
       n8 = decodeImm8();
@@ -1247,6 +1424,18 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "jr   c," + hex16(jaddr),
         exec: jr_cond_addr(cond_c, jaddr),
+      };
+    case 0x3A:
+      return {
+        length,
+        text: "ldd  a,(hl)",
+        exec: ldd_r8_at_r16(R8.A, R16.HL),
+      };
+    case 0x3B:
+      return {
+        length,
+        text: "dec  sp",
+        exec: dec_r16(R16.SP),
       };
     case 0x3C:
       return {
@@ -1267,11 +1456,35 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ld   a," + hex8(n8),
         exec: ld_r8_n8(R8.A, n8),
       };
+    case 0x3F:
+      return {
+        length,
+        text: "ccf  ",
+        exec: ccf,
+      };
+    case 0x40:
+      return {
+        length,
+        text: "ld   b,b",
+        exec: ld_r8_r8(R8.B, R8.B),
+      };
+    case 0x41:
+      return {
+        length,
+        text: "ld   b,c",
+        exec: ld_r8_r8(R8.B, R8.C),
+      };
     case 0x42:
       return {
         length,
         text: "ld   b,d",
         exec: ld_r8_r8(R8.B, R8.D),
+      };
+    case 0x43:
+      return {
+        length,
+        text: "ld   b,e",
+        exec: ld_r8_r8(R8.B, R8.E),
       };
     case 0x44:
       return {
@@ -1327,11 +1540,47 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ld   d,(hl)",
         exec: ld_r8_at_r16(R8.D, R16.HL),
       };
-      case 0x57:
+    case 0x57:
       return {
         length,
         text: "ld   d,a",
         exec: ld_r8_r8(R8.D, R8.A),
+      };
+    case 0x58:
+      return {
+        length,
+        text: "ld   e,b",
+        exec: ld_r8_r8(R8.E, R8.B),
+      };
+    case 0x59:
+      return {
+        length,
+        text: "ld   e,c",
+        exec: ld_r8_r8(R8.E, R8.C),
+      };
+    case 0x5A:
+      return {
+        length,
+        text: "ld   e,d",
+        exec: ld_r8_r8(R8.E, R8.D),
+      };
+    case 0x5B:
+      return {
+        length,
+        text: "ld   e,e",
+        exec: ld_r8_r8(R8.E, R8.E),
+      };
+    case 0x5C:
+      return {
+        length,
+        text: "ld   e,h",
+        exec: ld_r8_r8(R8.E, R8.H),
+      };
+    case 0x5D:
+      return {
+        length,
+        text: "ld   e,l",
+        exec: ld_r8_r8(R8.E, R8.L),
       };
     case 0x5E:
       return {
@@ -1345,6 +1594,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ld   e,a",
         exec: ld_r8_r8(R8.E, R8.A),
       };
+    case 0x60:
+      return {
+        length,
+        text: "ld   h,b",
+        exec: ld_r8_r8(R8.H, R8.B),
+      };
     case 0x61:
       return {
         length,
@@ -1356,6 +1611,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "ld   h,d",
         exec: ld_r8_r8(R8.H, R8.D),
+      };
+    case 0x63:
+      return {
+        length,
+        text: "ld   h,e",
+        exec: ld_r8_r8(R8.H, R8.E),
       };
     case 0x64:
       return {
@@ -1369,6 +1630,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ld   h,l",
         exec: ld_r8_r8(R8.H, R8.L),
       };
+    case 0x66:
+      return {
+        length,
+        text: "ld   h,(hl)",
+        exec: ld_r8_at_r16(R8.H, R16.HL),
+      };
     case 0x67:
       return {
         length,
@@ -1380,6 +1647,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "ld   l,c",
         exec: ld_r8_r8(R8.L, R8.C),
+      };
+    case 0x6A:
+      return {
+        length,
+        text: "ld   l,d",
+        exec: ld_r8_r8(R8.L, R8.D),
       };
     case 0x6B:
       return {
@@ -1428,6 +1701,18 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "ld   (hl),e",
         exec: ld_at_r16_r8(R16.HL, R8.E),
+      };
+    case 0x74:
+      return {
+        length,
+        text: "ld   (hl),h",
+        exec: ld_at_r16_r8(R16.HL, R8.H),
+      };
+    case 0x75:
+      return {
+        length,
+        text: "ld   (hl),l",
+        exec: ld_at_r16_r8(R16.HL, R8.L),
       };
     case 0x76:
       return {
@@ -1483,11 +1768,29 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "ld   a,(hl)",
         exec: ld_r8_at_r16(R8.A, R16.HL),
       };
+    case 0x7F:
+      return {
+        length,
+        text: "ld   a,a",
+        exec: ld_r8_r8(R8.A, R8.A),
+      };
+    case 0x80:
+      return {
+        length,
+        text: "add  b",
+        exec: add_r8(R8.B),
+      };
     case 0x81:
       return {
         length,
         text: "add  c",
         exec: add_r8(R8.C),
+      };
+    case 0x82:
+      return {
+        length,
+        text: "add  d",
+        exec: add_r8(R8.D),
       };
     case 0x83:
       return {
@@ -1495,11 +1798,77 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "add  e",
         exec: add_r8(R8.E),
       };
+    case 0x84:
+      return {
+        length,
+        text: "add  h",
+        exec: add_r8(R8.H),
+      };
+    case 0x85:
+      return {
+        length,
+        text: "add  l",
+        exec: add_r8(R8.L),
+      };
     case 0x86:
       return {
         length,
         text: "add  (hl)",
         exec: add_at_HL,
+      };
+    case 0x87:
+      return {
+        length,
+        text: "add  a",
+        exec: add_r8(R8.A),
+      };
+    case 0x88:
+      return {
+        length,
+        text: "adc  b",
+        exec: adc_r8(R8.B),
+      };
+    case 0x89:
+      return {
+        length,
+        text: "adc  c",
+        exec: adc_r8(R8.C),
+      };
+    case 0x8A:
+      return {
+        length,
+        text: "adc  d",
+        exec: adc_r8(R8.D),
+      };
+    case 0x8B:
+      return {
+        length,
+        text: "adc  e",
+        exec: adc_r8(R8.E),
+      };
+    case 0x8C:
+      return {
+        length,
+        text: "adc  h",
+        exec: adc_r8(R8.H),
+      };
+    case 0x8D:
+      return {
+        length,
+        text: "adc  l",
+        exec: adc_r8(R8.L),
+      };
+    case 0x8E:
+      return {
+        length,
+        text: "adc  (hl)",
+        exec: adc_at_HL,
+      };
+    case 0x8F:
+      return {
+        length,
+        text: "adc  a",
+        exec: adc_r8(R8.A),
       };
     case 0x90:
       return {
@@ -1513,11 +1882,125 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "sub  c",
         exec: sub_r8(R8.C),
       };
+    case 0x92:
+      return {
+        length,
+        text: "sub  d",
+        exec: sub_r8(R8.D),
+      };
+    case 0x93:
+      return {
+        length,
+        text: "sub  e",
+        exec: sub_r8(R8.E),
+      };
+    case 0x94:
+      return {
+        length,
+        text: "sub  h",
+        exec: sub_r8(R8.H),
+      };
+    case 0x95:
+      return {
+        length,
+        text: "sub  l",
+        exec: sub_r8(R8.L),
+      };
+    case 0x96:
+      return {
+        length,
+        text: "sub  (hl)",
+        exec: sub_at_HL,
+      };
+    case 0x97:
+      return {
+        length,
+        text: "sub  a",
+        exec: sub_r8(R8.A),
+      };
+    case 0x98:
+      return {
+        length,
+        text: "sbc  b",
+        exec: sbc_r8(R8.B),
+      };
+    case 0x99:
+      return {
+        length,
+        text: "sbc  c",
+        exec: sbc_r8(R8.C),
+      };
+    case 0x9A:
+      return {
+        length,
+        text: "sbc  d",
+        exec: sbc_r8(R8.D),
+      };
+    case 0x9B:
+      return {
+        length,
+        text: "sbc  e",
+        exec: sbc_r8(R8.E),
+      };
+    case 0x9C:
+      return {
+        length,
+        text: "sbc  h",
+        exec: sbc_r8(R8.H),
+      };
+    case 0x9D:
+      return {
+        length,
+        text: "sbc  l",
+        exec: sbc_r8(R8.L),
+      };
+    case 0x9E:
+      return {
+        length,
+        text: "sbc  (hl)",
+        exec: sbc_at_HL,
+      };
+    case 0x9F:
+      return {
+        length,
+        text: "sbc  a",
+        exec: sbc_r8(R8.A),
+      };
+    case 0xA0:
+      return {
+        length,
+        text: "and  b",
+        exec: and_r8(R8.B),
+      };
     case 0xA1:
       return {
         length,
         text: "and  c",
         exec: and_r8(R8.C),
+      };
+    case 0xA2:
+      return {
+        length,
+        text: "and  d",
+        exec: and_r8(R8.D),
+      };
+    case 0xA3:
+      return {
+        length,
+        text: "and  e",
+        exec: and_r8(R8.E),
+      };
+    case 0xA4:
+      return {
+        length,
+        text: "and  h",
+        exec: and_r8(R8.H),
+      };
+    case 0xA5:
+      return {
+        length,
+        text: "and  l",
+        exec: and_r8(R8.L),
       };
     case 0xA6:
       return {
@@ -1531,11 +2014,41 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "and  a",
         exec: and_r8(R8.A),
       };
+    case 0xA8:
+      return {
+        length,
+        text: "xor  b",
+        exec: xor_r8(R8.B),
+      };
     case 0xA9:
       return {
         length,
         text: "xor  c",
         exec: xor_r8(R8.C),
+      };
+    case 0xAA:
+      return {
+        length,
+        text: "xor  d",
+        exec: xor_r8(R8.D),
+      };
+    case 0xAB:
+      return {
+        length,
+        text: "xor  e",
+        exec: xor_r8(R8.E),
+      };
+    case 0xAC:
+      return {
+        length,
+        text: "xor  h",
+        exec: xor_r8(R8.H),
+      };
+    case 0xAD:
+      return {
+        length,
+        text: "xor  l",
+        exec: xor_r8(R8.L),
       };
     case 0xAE:
       return {
@@ -1555,6 +2068,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "or   b",
         exec: or_r8(R8.B),
       };
+    case 0xB1:
+      return {
+        length,
+        text: "or   c",
+        exec: or_r8(R8.C),
+      };
     case 0xB2:
       return {
         length,
@@ -1567,23 +2086,23 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "or   e",
         exec: or_r8(R8.E),
       };
+    case 0xB4:
+      return {
+        length,
+        text: "or   h",
+        exec: or_r8(R8.H),
+      };
+    case 0xB5:
+      return {
+        length,
+        text: "or   l",
+        exec: or_r8(R8.L),
+      };
     case 0xB6:
       return {
         length,
         text: "or   (hl)",
         exec: or_at_HL,
-      };
-    case 0xB9:
-      return {
-        length,
-        text: "cp   c",
-        exec: cp_r8(R8.C),
-      };
-    case 0xB1:
-      return {
-        length,
-        text: "or   c",
-        exec: or_r8(R8.C),
       };
     case 0xB7:
       return {
@@ -1597,6 +2116,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "cp   b",
         exec: cp_r8(R8.B),
       };
+    case 0xB9:
+      return {
+        length,
+        text: "cp   c",
+        exec: cp_r8(R8.C),
+      };
     case 0xBA:
       return {
         length,
@@ -1609,11 +2134,35 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "cp   e",
         exec: cp_r8(R8.E),
       };
+    case 0xBC:
+      return {
+        length,
+        text: "cp   h",
+        exec: cp_r8(R8.H),
+      };
+    case 0xBD:
+      return {
+        length,
+        text: "cp   l",
+        exec: cp_r8(R8.L),
+      };
     case 0xBE:
       return {
         length,
         text: "cp   (hl)",
         exec: cp_at_HL,
+      };
+    case 0xBF:
+      return {
+        length,
+        text: "cp   a",
+        exec: cp_r8(R8.A),
+      };
+    case 0xC0:
+      return {
+        length,
+        text: "ret  nz",
+        exec: ret_cond(cond_nz),
       };
     case 0xC1:
       return {
@@ -1696,6 +2245,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "adc  a," + hex8(n8),
         exec: adc_n8(n8),
       };
+    case 0xCF:
+      return {
+        length,
+        text: "rst  08",
+        exec: rst(0x08),
+      };
     case 0xD0:
       return {
         length,
@@ -1708,6 +2263,14 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "pop  de",
         exec: pop_r16(R16.DE),
       };
+    case 0xD2:
+      n16 = decodeImm16();
+      return {
+        length,
+        text: "jp   nc," + hex16(n16),
+        exec: jp_cond_addr(cond_nc, n16),
+      };
+    // 0xD3 is undefined
     case 0xD4:
       n16 = decodeImm16();
       return {
@@ -1739,6 +2302,28 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "reti ",
         exec: reti,
+      };
+    // 0xDB is undefined
+    case 0xDC:
+      n16 = decodeImm16();
+      return {
+        length,
+        text: "call c," + hex16(n16),
+        exec: call_cond(cond_c, n16),
+      };
+    // 0xDD is undefined
+    case 0xDE:
+      n8 = decodeImm8();
+      return {
+        length,
+        text: "sbc  a," + hex8(n8),
+        exec: sbc_n8(n8),
+      };
+    case 0xDF:
+      return {
+        length,
+        text: "rst  18",
+        exec: rst(0x18),
       };
     case 0xE0:
       n8 = decodeImm8();
@@ -1809,6 +2394,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "pop  af",
         exec: pop_r16(R16.AF),
       };
+    case 0xF2:
+      return {
+        length,
+        text: "ld   a,(ff00+c)",
+        exec: ld_r8_at_r8(R8.A, R8.C),
+      };
     case 0xF3:
       return {
         length,
@@ -1876,7 +2467,7 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
           const addrClosure = addr;
           throw Error(`unrecognized opcode ${hex8(opcodeClosure)} at ${hex16(addrClosure)}`);
         }
-      }
+      };
   }
 }
 
