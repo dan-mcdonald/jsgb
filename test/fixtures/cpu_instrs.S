@@ -454,3 +454,76 @@ ROM0:0206 2A               ldi  a,(hl)
 ROM0:0207 12               ld   (de),a
 ROM0:0208 1C               inc  e
 ROM0:0209 20 FB            jr   nz,0206
+ROM0:020B 14               inc  d
+ROM0:020C 0D               dec  c
+ROM0:020D 20 F7            jr   nz,0206
+ROM0:020F 78               ld   a,b
+ROM0:0210 C3 00 C0         jp   C000
+ROM0:0213 D6 05            sub  a,05
+ROM0:0215 30 FC            jr   nc,0213
+ROM0:0217 1F               rra  
+ROM0:0218 30 00            jr   nc,021A
+ROM0:021A CE 01            adc  a,01
+ROM0:021C D0               ret  nc
+ROM0:021D C8               ret  z
+ROM0:021E 00               nop  
+ROM0:021F C9               ret  
+ROM0:0220 B7               or   a
+ROM0:0221 C8               ret  z
+ROM0:0222 F5               push af
+ROM0:0223 3E DF            ld   a,DF
+ROM0:0225 CD 13 02         call 0213
+ROM0:0228 F1               pop  af
+ROM0:0229 3D               dec  a
+ROM0:022A 20 F6            jr   nz,0222
+ROM0:022C C9               ret  
+ROM0:022D B7               or   a
+ROM0:022E C8               ret  z
+ROM0:022F F5               push af
+ROM0:0230 3E FF            ld   a,FF
+ROM0:0232 CD 22 02         call 0222
+ROM0:0235 3E D4            ld   a,D4
+ROM0:0237 CD 13 02         call 0213
+ROM0:023A F1               pop  af
+ROM0:023B 3D               dec  a
+ROM0:023C 20 F1            jr   nz,022F
+ROM0:023E C9               ret  
+ROM0:023F F5               push af
+ROM0:0240 7C               ld   a,h
+ROM0:0241 CD 20 02         call 0220
+ROM0:0244 7D               ld   a,l
+ROM0:0245 CD 13 02         call 0213
+ROM0:0248 F1               pop  af
+ROM0:0249 C9               ret  
+ROM0:024A 00               nop  
+ROM0:024B 00               nop  
+ROM0:024C 00               nop  
+ROM0:024D 00               nop  
+ROM0:024E 00               nop  
+ROM0:024F 00               nop  
+ROM0:0250 00               nop  
+ROM0:0251 00               nop  
+ROM0:0252 00               nop  
+ROM0:0253 00               nop  
+ROM0:0254 00               nop  
+ROM0:0255 00               nop  
+ROM0:0256 00               nop  
+ROM0:0257 00               nop  
+ROM0:0258 00               nop  
+ROM0:0259 00               nop  
+ROM0:025A 00               nop  
+ROM0:025B 00               nop  
+ROM0:025C C9               ret  
+ROM0:025D 18 00            jr   025F
+ROM0:025F 3E FF            ld   a,FF
+ROM0:0261 E0 C0            ld   (ff00+C0),a
+ROM0:0263 E0 C1            ld   (ff00+C1),a
+ROM0:0265 E0 C2            ld   (ff00+C2),a
+ROM0:0267 E0 C3            ld   (ff00+C3),a
+ROM0:0269 C9               ret  
+ROM0:026A F5               push af
+ROM0:026B C5               push bc
+ROM0:026C D5               push de
+ROM0:026D E5               push hl
+ROM0:026E 21 C3 FF         ld   hl,FFC3
+ROM0:0271 46               ld   b,(hl)

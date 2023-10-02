@@ -541,15 +541,25 @@ function cp_at_HL(cpu: CPU, bus: Bus): number {
   return 8;
 }
 
+function sub(cpu: CPU, val: number): void {
+  // A = A - val
+  const oldA = cpu.regs.a;
+  const newA = (oldA - val) & 0xff;
+  cpu.regs.a = newA;
+  cpu.f = cpu.f.setZ(newA == 0).setN(true).setH((oldA & 0xf) < (val & 0xf)).setC(oldA < val);
+}
+
 function sub_r8(reg: R8): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
-    // A = A - r
-    const oldA = cpu.regs.a;
-    const r = get8(cpu, reg);
-    const newA = (oldA - r) & 0xff;
-    cpu.regs.a = newA;
-    cpu.f = cpu.f.setZ(newA == 0).setN(true).setH((oldA & 0xf) < (r & 0xf)).setC(oldA < r);
+    sub(cpu, get8(cpu, reg));
     return 4;
+  }
+}
+
+function sub_n8(val: number): InstructionFunction {
+  return function (cpu: CPU, _: Bus): number {
+    sub(cpu, val);
+    return 8;
   }
 }
 
@@ -665,6 +675,34 @@ function rl_r8(reg: R8): InstructionFunction {
     const newVal = ((oldVal << 1) | (cpu.f.C() ? 1 : 0)) & 0xff;
     set8(cpu, reg, newVal & 0xff);
     cpu.f = cpu.f.setZ(newVal === 0).setN(false).setH(false).setC((oldVal & 0x80) !== 0);
+    return 8;
+  }
+}
+
+function rr_r8(reg: R8): InstructionFunction {
+  return function (cpu: CPU, _: Bus): number {
+    const oldVal = get8(cpu, reg);
+    const newVal = ((oldVal >> 1) | (cpu.f.C() ? 0x80 : 0x00)) & 0xff;
+    set8(cpu, reg, newVal & 0xff);
+    cpu.f = cpu.f.setZ(newVal === 0).setN(false).setH(false).setC((oldVal & 0x01) !== 0);
+    return 8;
+  }
+}
+
+function adc(cpu: CPU, val: number): void {
+  const oldA = cpu.regs.a;
+  const newVal = (oldA + val + (cpu.f.C() ? 1 : 0)) & 0xff;
+  cpu.regs.a = newVal;
+  cpu.f = cpu.f
+    .setZ(newVal === 0)
+    .setN(false)
+    .setH((oldA & 0xf) + (val & 0xf) + (cpu.f.C() ? 1 : 0) > 0xf)
+    .setC(oldA + val + (cpu.f.C() ? 1 : 0) > 0xff);
+}
+
+function adc_n8(val: number): InstructionFunction {
+  return function (cpu: CPU, _: Bus): number {
+    adc(cpu, val);
     return 8;
   }
 }
@@ -844,6 +882,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "inc  de",
         exec: inc_r16(R16.DE)
       };
+    case 0x14:
+      return {
+        length,
+        text: "inc  d",
+        exec: inc_r8(R8.D),
+      };
     case 0x15:
       return {
         length,
@@ -907,6 +951,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "ld   e," + hex8(n8),
         exec: ld_r8_n8(R8.E, n8),
+      };
+    case 0x1F:
+      return {
+        length,
+        text: "rra  ",
+        exec: rr_r8(R8.A),
       };
     case 0x20:
       n8 = decodeImm8();
@@ -1034,6 +1084,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "ld   a," + hex8(n8),
         exec: ld_r8_n8(R8.A, n8),
+      };
+    case 0x46:
+      return {
+        length,
+        text: "ld   b,(hl)",
+        exec: ld_r8_at_r16(R8.B, R16.HL),
       };
     case 0x47:
       return {
@@ -1209,6 +1265,12 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "or   c",
         exec: or_r8(R8.C),
       };
+    case 0xB7:
+      return {
+        length,
+        text: "or   a",
+        exec: or_r8(R8.A),
+      };
     case 0xBE:
       return {
         length,
@@ -1275,6 +1337,19 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         text: "call " + hex16(n16),
         exec: call(n16),
       };
+    case 0xCE:
+      n8 = decodeImm8();
+      return {
+        length,
+        text: "adc  a," + hex8(n8),
+        exec: adc_n8(n8),
+      };
+    case 0xD0:
+      return {
+        length,
+        text: "ret  nc",
+        exec: ret_cond(cond_nc),
+      };
     case 0xD1:
       return {
         length,
@@ -1286,6 +1361,13 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         length,
         text: "push de",
         exec: push_r16(R16.DE),
+      };
+    case 0xD6:
+      n8 = decodeImm8();
+      return {
+        length,
+        text: "sub  a," + hex8(n8),
+        exec: sub_n8(n8),
       };
     case 0xD9:
       return {
