@@ -1,6 +1,5 @@
 /// <reference lib="dom" />
 import { Bus } from "./bus";
-import { hex8 } from "./util";
 import { Interrupt, setInterrupt } from "./interrupt";
 
 const SCREEN_WIDTH = 160;
