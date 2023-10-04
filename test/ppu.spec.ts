@@ -6,6 +6,7 @@ import type { ImageData as NodeImageData, Image as NodeImage } from 'canvas';
 // import { pipeline } from 'node:stream/promises';
 // import { createWriteStream } from 'node:fs';
 import { readFile } from "node:fs/promises";
+import { hex16 } from '../src/util';
 
 // use canvas to polyfill ImageData when running tests in node
 (global as { [key: string]: any })["ImageData"] = ImageData; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -143,5 +144,29 @@ describe("ppu", (): void => {
     // await pipeline(bgCanvas.createPNGStream(), createWriteStream("./dist/bootend-bg.png"));
     const expectedBootBg = imageToData(await loadImage("./test/fixtures/bootend-bg.png"));
     expect(actualImage).to.deep.equal(expectedBootBg);
+  });
+
+  it("ly timing", () => {
+    const ppu = PPU.ppuBuild();
+    const bus = {
+      readb: (addr: number): number => { throw new Error("unhandled read to addr " + hex16(addr)); },
+      writeb: (_: number, __: number): void => { },
+    };
+    expect(PPU.getLine(ppu)).to.equal(0);
+    expect(ppu.lineDot).to.equal(0);
+    expect(PPU.getMode(ppu)).to.equal(PPU.Mode.TWO);
+    // LCD is initially disabled so expect no change
+    PPU.tick(ppu, bus);
+    expect(PPU.getLine(ppu)).to.equal(0);
+    expect(ppu.lineDot).to.equal(0);
+    expect(PPU.getMode(ppu)).to.equal(PPU.Mode.TWO);
+    ppu.ioRegs[PPU.Register.LCDC] = 0x91;
+    
+    // Tick through a line
+    for(let i = 0; i < 456; i++) {
+      PPU.tick(ppu, bus);
+      expect(ppu.lineDot).to.equal((i+1) % 456);
+    }
+    expect(PPU.getLine(ppu)).to.equal(1);
   });
 });

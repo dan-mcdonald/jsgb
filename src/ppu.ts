@@ -127,7 +127,7 @@ export enum Register {
   WX,
 }
 
-enum Mode {
+export enum Mode {
   ZERO,
   ONE,
   TWO,
@@ -143,8 +143,13 @@ export interface PPU {
 }
 
 export function ppuBuild(): PPU {
+  const ioRegs = new Uint8Array(Register.WX + 1);
+  ioRegs[Register.STAT] = 0x84 | Mode.TWO;
+  ioRegs[Register.DMA] = 0xFF;
+  ioRegs[Register.BGP] = 0xFC;
+  ioRegs[Register.OBP0] = ioRegs[Register.OBP1] = 0xFF;
   return {
-    ioRegs: new Uint8Array(Register.WX + 1),
+    ioRegs,
     vram: new Uint8Array(0x2000),
     oam: new Uint8Array(0xA0),
     lineDot: 0,
@@ -154,7 +159,7 @@ export function ppuBuild(): PPU {
 
 const statModeMask = 0x03;
 
-function getMode(ppu: PPU): Mode {
+export function getMode(ppu: PPU): Mode {
   return (ppu.ioRegs[Register.STAT] & statModeMask) as Mode;
 }
 
@@ -162,7 +167,7 @@ function setMode(ppu: PPU, mode: Mode): void {
   ppu.ioRegs[Register.STAT] = (ppu.ioRegs[Register.STAT] & (~statModeMask)) | mode;
 }
 
-function getLine(ppu: PPU): number {
+export function getLine(ppu: PPU): number {
   return ppu.ioRegs[Register.LY];
 }
 
@@ -172,17 +177,14 @@ function setLine(ppu: PPU, line: number): void {
 
 function getDMASrcAddr(ppu: PPU): number | null {
   const regVal = ppu.ioRegs[Register.DMA];
-  if (regVal == 0) {
+  if (regVal > 0xDF) {
     return null;
   }
-  if (regVal >= 0x00 && regVal <= 0xF1) {
-    return regVal * 0x0100;
-  }
-  throw new Error(`Invalid value in DMA register ${hex8(regVal)}`);
+  return regVal * 0x0100;
 }
 
 function clearDMA(ppu: PPU): void {
-  ppu.ioRegs[Register.DMA] = 0;
+  ppu.ioRegs[Register.DMA] = 0xFF;
 }
 
 const statLYCFlagMask = 0x04;
@@ -210,6 +212,8 @@ function screenColorForPalette(palette: number, index: number): ScreenColor {
 function lcdc4(ppu: PPU): boolean {
   return (ppu.ioRegs[Register.LCDC] & (1 << 4)) != 0;
 }
+
+const LCDC_ENABLED = 1 << 7;
 
 function calcBgPixel(ppu: PPU, x: number, y: number): ScreenColor {
   const tileIndex = getBgTileIndex(ppu, Math.floor(x / 8), Math.floor(y / 8));
@@ -246,6 +250,9 @@ function drawPixel(ppu: PPU, x: number): void {
 }
 
 export function tick(ppu: PPU, bus: Bus): void {
+  if ((ppu.ioRegs[Register.LCDC] & LCDC_ENABLED) === 0) {
+    return;
+  }
   ppu.lineDot++;
 
   const dmaSrcAddr = getDMASrcAddr(ppu);
