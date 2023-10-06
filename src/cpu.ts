@@ -315,11 +315,13 @@ export function daa(cpu: CPU, _: Bus): number {
   const oldN = cpu.f.N();
   const oldH = cpu.f.H();
   if (oldN) {
-    if (oldC) {
+    if (oldC || oldA > 0x99) {
       newA -= 0x60;
+      cpu.f = cpu.f.setC(true);
     }
-    if (oldH) {
+    if (oldH || (oldA & 0x0f) > 0x09) {
       newA -= 0x06;
+      cpu.f = cpu.f.setH((newA & 0x0f) > 0x09);
     }
   } else {
     if (oldC || oldA > 0x99) {
@@ -328,12 +330,11 @@ export function daa(cpu: CPU, _: Bus): number {
     }
     if (oldH || (oldA & 0x0f) > 0x09) {
       newA += 0x06;
-      cpu.f = cpu.f.setH(false);
+      cpu.f = cpu.f.setH((oldA & 0x0f) > 0x09);
     }
   }
-  newA &= 0xff;
+  cpu.regs.a = (newA &= 0xff);
   cpu.f = cpu.f.setZ(newA == 0);
-  cpu.regs.a = newA;  
   return 4;
 }
 
