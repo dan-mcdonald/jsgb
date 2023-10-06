@@ -209,6 +209,23 @@ describe("push bc", (): void => {
   });
 });
 
+describe("pop af", (): void =>{
+  it("keeps low bits zero", (): void => {
+    const cpu = initCPU();
+    cpu.regs.b = 0xc3;
+    cpu.regs.c = 0x0f;
+    cpu.regs.sp = 0xfffd;
+    const memory = new Uint8Array(0x10000);
+    const readb = (addr: number): number => memory[addr];
+    const writeb = (addr: number, val: number): void => { memory[addr] = val; };
+    const bus = { readb, writeb };
+    push_r16(R16.BC)(cpu, bus);
+    pop_r16(R16.AF)(cpu, bus);
+    expect(cpu.regs.a).to.equal(0xc3);
+    expect(cpu.f.valueOf()).to.equal(0x00);
+  });
+});
+
 describe("swap a", (): void => {
   const readb = (addr: number): number => [0xcb, 0x37][addr];
   const writeb = (_: number, __: number): void => { };

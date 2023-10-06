@@ -5,6 +5,9 @@ import { interruptVector, interruptPending, clearInterrupt } from "./interrupt";
 type InstructionFunction = (cpu: CPU, bus: Bus) => number;
 
 export class Flags extends Number {
+  constructor(f: number) {
+    super(f & 0xf0);
+  }
   setZ(b: boolean): Flags {
     const n = this.valueOf();
     return new Flags(b ? n | maskZ : n & ~maskZ);
@@ -251,7 +254,7 @@ function set16(cpu: CPU, target: R16, val: number): void {
       break;
     case R16.AF:
       cpu.regs.a = val >> 8;
-      cpu.f = new Flags(val & 0xff);
+      cpu.f = new Flags(val);
       break;
     case R16.BC:
       cpu.regs.b = val >> 8;
