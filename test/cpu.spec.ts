@@ -226,27 +226,159 @@ describe("pop af", (): void =>{
   });
 });
 
+type DaaTestCase = {
+  initA: number,
+  initZ: boolean,
+  initN: boolean,
+  initH: boolean,
+  initC: boolean,
+  expectedA: number,
+  expectedZ: boolean,
+  expectedN: boolean,
+  expectedH: boolean,
+  expectedC: boolean,
+}
+
+function loadDaaTestCases(): DaaTestCase[] {
+  function parseBool(s: string): boolean {
+    if (s === "1") {
+      return true;
+    }
+    if (s === "0") {
+      return false;
+    }
+    throw new Error("unexpected bool: " + s);
+  }
+  function makeCase(line: string): DaaTestCase {
+    const initN = parseBool(line[2]);
+    const initC = parseBool(line[6]);
+    const initH = parseBool(line[10]);
+    const initA = parseInt(line.slice(12, 14), 16);
+    const initZ = false;
+    const expectedN = parseBool(line[17]);
+    const expectedC = parseBool(line[21]);
+    const expectedH = parseBool(line[25]);
+    const expectedA = parseInt(line.slice(27, 29), 16);
+    const expectedZ = expectedA === 0;
+    return {initN, initC, initH, initA, initZ, expectedN, expectedC, expectedH, expectedA, expectedZ};
+  }
+  const lines = readFileSync("test/fixtures/daaoutput.txt", {encoding: "utf-8"}).split("\n");
+  return lines.map(makeCase);
+}
+
 describe("daa", (): void => {
-  it("0x4B => 0x51 flags 0000", (): void => {
-    const cpu = initCPU();
-    cpu.regs.a = 0x4B;
-    daa(cpu, {readb: readb_error, writeb: writeb_error});
-    expect(cpu.regs.a).to.equal(0x51);
-    expect(cpu.f.Z()).to.be.false;
-    expect(cpu.f.N()).to.be.false;
-    expect(cpu.f.H()).to.be.false;
-    expect(cpu.f.C()).to.be.false;
-  });
-  it("0x9A => 0x00 flags 1001", (): void => {
-    const cpu = initCPU();
-    cpu.regs.a = 0x9A;
-    daa(cpu, {readb: readb_error, writeb: writeb_error});
-    expect(cpu.regs.a).to.equal(0x00);
-    expect(cpu.f.Z()).to.be.true;
-    expect(cpu.f.N()).to.be.false;
-    expect(cpu.f.H()).to.be.false;
-    expect(cpu.f.C()).to.be.true;
-  });
+  // test fixture courtesy ruyrybeyro https://github.com/ruyrybeyro/daatable/blob/master/daaoutput.txt
+  for(const testCase of loadDaaTestCases()) {
+    it(`0x${testCase.initA.toString(16)} ${testCase.initZ ? "Z" : "z"}${testCase.initN ? "N" : "n"}${testCase.initH ? "H" : "h"}${testCase.initC ? "C" : "c"} => 0x${testCase.expectedA.toString(16)} ${testCase.expectedZ ? "Z" : "z"}${testCase.expectedN ? "N" : "n"}${testCase.expectedH ? "H" : "h"}${testCase.expectedC ? "C" : "c"}`, (): void => {
+      const cpu = initCPU();
+      cpu.regs.a = testCase.initA;
+      cpu.f = cpu.f.setZ(testCase.initZ).setN(testCase.initN).setH(testCase.initH).setC(testCase.initC);
+      daa(cpu, {readb: readb_error, writeb: writeb_error});
+      expect(cpu.regs.a, "A").to.equal(testCase.expectedA);
+      expect(cpu.f.Z(), "Z").to.equal(testCase.expectedZ);
+      expect(cpu.f.N(), "N").to.equal(testCase.expectedN);
+      expect(cpu.f.H(), "H").to.equal(testCase.expectedH);
+      expect(cpu.f.C(), "C").to.equal(testCase.expectedC);
+    });
+  }
+
+  // it("0x4B znhc => 0x51 znhc", (): void => {
+  //   const cpu = initCPU();
+  //   cpu.regs.a = 0x4B;
+  //   daa(cpu, {readb: readb_error, writeb: writeb_error});
+  //   expect(cpu.regs.a).to.equal(0x51);
+  //   expect(cpu.f.Z()).to.be.false;
+  //   expect(cpu.f.N()).to.be.false;
+  //   expect(cpu.f.H()).to.be.false;
+  //   expect(cpu.f.C()).to.be.false;
+  // });
+  // it("0x9A znhc => 0x00 ZnhC", (): void => {
+  //   const cpu = initCPU();
+  //   cpu.regs.a = 0x9A;
+  //   daa(cpu, {readb: readb_error, writeb: writeb_error});
+  //   expect(cpu.regs.a).to.equal(0x00);
+  //   expect(cpu.f.Z()).to.be.true;
+  //   expect(cpu.f.N()).to.be.false;
+  //   expect(cpu.f.H()).to.be.false;
+  //   expect(cpu.f.C()).to.be.true;
+  // });
+  // it("0x00 znhC => 0x60 znhC", (): void => {
+  //   const cpu = initCPU();
+  //   cpu.regs.a = 0x00;
+  //   cpu.f = cpu.f.setC(true);
+  //   daa(cpu, {readb: readb_error, writeb: writeb_error});
+  //   expect(cpu.regs.a).to.equal(0x60);
+  //   expect(cpu.f.Z()).to.be.false;
+  //   expect(cpu.f.N()).to.be.false;
+  //   expect(cpu.f.H()).to.be.false;
+  //   expect(cpu.f.C()).to.be.true;
+  // });
+  // it("0x0A znhC => 0x70 znhC", (): void => {
+  //   const cpu = initCPU();
+  //   cpu.regs.a = 0x0A;
+  //   cpu.f = cpu.f.setC(true);
+  //   daa(cpu, {readb: readb_error, writeb: writeb_error});
+  //   expect(cpu.regs.a).to.equal(0x70);
+  //   expect(cpu.f.Z()).to.be.false;
+  //   expect(cpu.f.N()).to.be.false;
+  //   expect(cpu.f.H()).to.be.false;
+  //   expect(cpu.f.C()).to.be.true;
+  // });
+  // it("0x99 znhC => 0xF9 znhC", (): void => {
+  //   const cpu = initCPU();
+  //   cpu.regs.a = 0x99;
+  //   cpu.f = cpu.f.setC(true);
+  //   daa(cpu, {readb: readb_error, writeb: writeb_error});
+  //   expect(cpu.regs.a).to.equal(0xF9);
+  //   expect(cpu.f.Z()).to.be.false;
+  //   expect(cpu.f.N()).to.be.false;
+  //   expect(cpu.f.H()).to.be.false;
+  //   expect(cpu.f.C()).to.be.true;
+  // });
+  // it("0x9A znhC => 0x00 ZnhC", (): void => {
+  //   const cpu = initCPU();
+  //   cpu.regs.a = 0x9A;
+  //   cpu.f = cpu.f.setC(true);
+  //   daa(cpu, {readb: readb_error, writeb: writeb_error});
+  //   expect(cpu.regs.a).to.equal(0x00);
+  //   expect(cpu.f.Z()).to.be.true;
+  //   expect(cpu.f.N()).to.be.false;
+  //   expect(cpu.f.H()).to.be.false;
+  //   expect(cpu.f.C()).to.be.true;
+  // });
+  // it("0xFF znhC => 0x65 znhC", (): void => {
+  //   const cpu = initCPU();
+  //   cpu.regs.a = 0xFF;
+  //   cpu.f = cpu.f.setC(true);
+  //   daa(cpu, {readb: readb_error, writeb: writeb_error});
+  //   expect(cpu.regs.a).to.equal(0x65);
+  //   expect(cpu.f.Z()).to.be.false;
+  //   expect(cpu.f.N()).to.be.false;
+  //   expect(cpu.f.H()).to.be.false;
+  //   expect(cpu.f.C()).to.be.true;
+  // });
+  // it("0x00 znHc => 0x06 znHc", (): void => {
+  //   const cpu = initCPU();
+  //   cpu.regs.a = 0x00;
+  //   cpu.f = cpu.f.setH(true);
+  //   daa(cpu, {readb: readb_error, writeb: writeb_error});
+  //   expect(cpu.regs.a).to.equal(0x06);
+  //   expect(cpu.f.Z()).to.be.false;
+  //   expect(cpu.f.N()).to.be.false;
+  //   expect(cpu.f.H()).to.be.true;
+  //   expect(cpu.f.C()).to.be.false;
+  // });
+  // it("0xE3 znHc => 0x49 znhC", (): void => {
+  //   const cpu = initCPU();
+  //   cpu.regs.a = 0xE3;
+  //   cpu.f = cpu.f.setH(true);
+  //   daa(cpu, {readb: readb_error, writeb: writeb_error});
+  //   expect(cpu.regs.a).to.equal(0x49);
+  //   expect(cpu.f.Z()).to.be.false;
+  //   expect(cpu.f.N()).to.be.false;
+  //   expect(cpu.f.H()).to.be.false;
+  //   expect(cpu.f.C()).to.be.true;
+  // });
 });
 
 describe("swap a", (): void => {

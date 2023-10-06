@@ -311,15 +311,29 @@ function ccf(cpu: CPU, _: Bus): number {
 export function daa(cpu: CPU, _: Bus): number {
   const oldA = cpu.regs.a;
   let newA = oldA;
-  if (cpu.f.H() || (oldA & 0xf) > 9) {
-    newA += cpu.f.N() ? -0x06 : 0x06;
-  }
-  if (cpu.f.C() || oldA > 0x99) {
-    newA += cpu.f.N() ? -0x60 : 0x60;
+  const oldC = cpu.f.C();
+  const oldN = cpu.f.N();
+  const oldH = cpu.f.H();
+  if (oldN) {
+    if (oldC) {
+      newA -= 0x60;
+    }
+    if (oldH) {
+      newA -= 0x06;
+    }
+  } else {
+    if (oldC || oldA > 0x99) {
+      newA += 0x60;
+      cpu.f = cpu.f.setC(true);
+    }
+    if (oldH || (oldA & 0x0f) > 0x09) {
+      newA += 0x06;
+      cpu.f = cpu.f.setH(false);
+    }
   }
   newA &= 0xff;
-  cpu.regs.a = newA;
-  cpu.f = cpu.f.setZ(newA == 0).setH(false).setC(oldA > 0x99);
+  cpu.f = cpu.f.setZ(newA == 0);
+  cpu.regs.a = newA;  
   return 4;
 }
 
