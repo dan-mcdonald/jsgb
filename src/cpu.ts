@@ -308,17 +308,18 @@ function ccf(cpu: CPU, _: Bus): number {
   return 4;
 }
 
-function daa(cpu: CPU, _: Bus): number {
+export function daa(cpu: CPU, _: Bus): number {
   const oldA = cpu.regs.a;
   let newA = oldA;
-  if (cpu.f.H() || (!cpu.f.N() && (oldA & 0xf) > 9)) {
-    newA += 0x06;
+  if (cpu.f.H() || (oldA & 0xf) > 9) {
+    newA += cpu.f.N() ? -0x06 : 0x06;
   }
-  if (cpu.f.C() || (!cpu.f.N() && oldA > 0x99)) {
-    newA += 0x60;
+  if (cpu.f.C() || oldA > 0x99) {
+    newA += cpu.f.N() ? -0x60 : 0x60;
   }
-  cpu.regs.a = newA & 0xff;
-  cpu.f = cpu.f.setZ(newA == 0).setH(false).setC(cpu.f.C() || oldA > 0x99);
+  newA &= 0xff;
+  cpu.regs.a = newA;
+  cpu.f = cpu.f.setZ(newA == 0).setH(false).setC(oldA > 0x99);
   return 4;
 }
 

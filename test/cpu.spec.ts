@@ -1,4 +1,4 @@
-import { Flags, initCPU, step, maskZ, decodeInsn, pop_r16, R16, push_r16, ldi_at_r16_r8, OP8, ldd_at_r16_r8, dec_r16, add_r16_r16 } from "../src/cpu";
+import { Flags, initCPU, step, maskZ, decodeInsn, pop_r16, R16, push_r16, ldi_at_r16_r8, OP8, ldd_at_r16_r8, dec_r16, add_r16_r16, daa } from "../src/cpu";
 import { expect } from 'chai';
 import { BusRead, BusWrite } from "../src/bus";
 import buildBus from "../src/buildBus";
@@ -223,6 +223,29 @@ describe("pop af", (): void =>{
     pop_r16(R16.AF)(cpu, bus);
     expect(cpu.regs.a).to.equal(0xc3);
     expect(cpu.f.valueOf()).to.equal(0x00);
+  });
+});
+
+describe("daa", (): void => {
+  it("0x4B => 0x51 flags 0000", (): void => {
+    const cpu = initCPU();
+    cpu.regs.a = 0x4B;
+    daa(cpu, {readb: readb_error, writeb: writeb_error});
+    expect(cpu.regs.a).to.equal(0x51);
+    expect(cpu.f.Z()).to.be.false;
+    expect(cpu.f.N()).to.be.false;
+    expect(cpu.f.H()).to.be.false;
+    expect(cpu.f.C()).to.be.false;
+  });
+  it("0x9A => 0x00 flags 1001", (): void => {
+    const cpu = initCPU();
+    cpu.regs.a = 0x9A;
+    daa(cpu, {readb: readb_error, writeb: writeb_error});
+    expect(cpu.regs.a).to.equal(0x00);
+    expect(cpu.f.Z()).to.be.true;
+    expect(cpu.f.N()).to.be.false;
+    expect(cpu.f.H()).to.be.false;
+    expect(cpu.f.C()).to.be.true;
   });
 });
 
