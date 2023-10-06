@@ -9,7 +9,6 @@ import * as PPU from "../src/ppu";
 import { audioInit } from "../src/audio";
 import { load as bessLoad } from "../src/bess";
 import { hex16, hex8 } from "../src/util";
-import { EOL } from "os";
 import { globSync as glob } from "glob";
 import { basename } from "path";
 
@@ -27,7 +26,7 @@ function loadDecodeInsnTestCasesFile(path: string): DisasmTestCase[] {
     const disasm = line.slice(27);
     return { file, addr, bytes, disasm };
   }
-  return disasmContent.split(EOL).filter((line) => line.length > 0).map(lineToTestCase).filter((tc) => !tc.disasm.startsWith("db "));
+  return disasmContent.split("\n").filter((line) => line.length > 0).map(lineToTestCase).filter((tc) => !tc.disasm.startsWith("db "));
 }
 
 function loadDecodeInsnTestCases(): DisasmTestCase[] {
