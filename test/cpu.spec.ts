@@ -11,14 +11,15 @@ import { load as bessLoad } from "../src/bess";
 import { hex16, hex8 } from "../src/util";
 import { globSync as glob } from "glob";
 import { basename } from "path";
+import { EOL } from "os";
 
-const readb_error = (_: number): number => {throw new Error("unexpected read");};
-const writeb_error = (_: number, __: number): void => {throw new Error("unexpected write");};
+const readb_error = (_: number): number => { throw new Error("unexpected read"); };
+const writeb_error = (_: number, __: number): void => { throw new Error("unexpected write"); };
 
 interface DisasmTestCase { file: string, addr: number, bytes: number[], disasm: string }
 
 function loadDecodeInsnTestCasesFile(path: string): DisasmTestCase[] {
-  const disasmContent = readFileSync(path, {encoding: "utf-8"});
+  const disasmContent = readFileSync(path, { encoding: "utf-8" });
   const file = basename(path);
   function lineToTestCase(line: string): DisasmTestCase {
     const addr = parseInt(line.slice(5, 9), 16);
@@ -26,7 +27,7 @@ function loadDecodeInsnTestCasesFile(path: string): DisasmTestCase[] {
     const disasm = line.slice(27);
     return { file, addr, bytes, disasm };
   }
-  return disasmContent.split("\n").filter((line) => line.length > 0).map(lineToTestCase).filter((tc) => !tc.disasm.startsWith("db "));
+  return disasmContent.split(EOL).filter((line) => line.length > 0).map(lineToTestCase).filter((tc) => !tc.disasm.startsWith("db "));
 }
 
 function loadDecodeInsnTestCases(): DisasmTestCase[] {
@@ -34,7 +35,7 @@ function loadDecodeInsnTestCases(): DisasmTestCase[] {
   const allCases = files.flatMap(loadDecodeInsnTestCasesFile);
   const uniqueCases: DisasmTestCase[] = [];
   const disasmSet = new Set<string>();
-  for(const testCase of allCases) {
+  for (const testCase of allCases) {
     if (!disasmSet.has(testCase.disasm)) {
       uniqueCases.push(testCase);
       disasmSet.add(testCase.disasm);
@@ -131,11 +132,11 @@ describe("ldi_at_r16_r8", () => {
     cpu.regs.h = 0x80;
     cpu.regs.l = 0x10;
     cpu.regs.a = 0x41;
-    const writeMap = new Map<number,number>();
+    const writeMap = new Map<number, number>();
     const writeb = (addr: number, val: number): void => {
       writeMap.set(addr, val);
     };
-    const bus = {writeb, readb: readb_error};
+    const bus = { writeb, readb: readb_error };
     ldi_at_r16_r8(R16.HL, OP8.A)(cpu, bus);
     expect(writeMap.size).to.equal(1);
     expect(writeMap.get(0x8010)).to.equal(0x41);
@@ -150,11 +151,11 @@ describe("ldd_at_r16_r8", () => {
     cpu.regs.h = 0x80;
     cpu.regs.l = 0x10;
     cpu.regs.a = 0x41;
-    const writeMap = new Map<number,number>();
+    const writeMap = new Map<number, number>();
     const writeb = (addr: number, val: number): void => {
       writeMap.set(addr, val);
     };
-    const bus = {writeb, readb: readb_error};
+    const bus = { writeb, readb: readb_error };
     ldd_at_r16_r8(R16.HL, OP8.A)(cpu, bus);
     expect(writeMap.size).to.equal(1);
     expect(writeMap.get(0x8010)).to.equal(0x41);
@@ -184,7 +185,7 @@ describe("pop bc", (): void => {
       }
     }
     const writeb = (_: number, __: number): void => { };
-    pop_r16(R16.BC)(cpu, {readb, writeb});
+    pop_r16(R16.BC)(cpu, { readb, writeb });
     expect(cpu.regs.b).to.equal(0x04);
     expect(cpu.regs.c).to.equal(0xce);
     expect(cpu.regs.sp).to.equal(0xfffc);
@@ -197,11 +198,11 @@ describe("push bc", (): void => {
     cpu.regs.sp = 0xfffc;
     cpu.regs.b = 0x04;
     cpu.regs.c = 0xce;
-    const writeMap = new Map<number,number>();
+    const writeMap = new Map<number, number>();
     const writeb = (addr: number, val: number): void => {
       writeMap.set(addr, val);
     };
-    push_r16(R16.BC)(cpu, {readb: readb_error, writeb});
+    push_r16(R16.BC)(cpu, { readb: readb_error, writeb });
     expect(cpu.regs.sp).to.equal(0xfffa);
     expect(writeMap.get(0xfffc)).to.equal(0x04);
     expect(writeMap.get(0xfffb)).to.equal(0xce);
@@ -209,7 +210,7 @@ describe("push bc", (): void => {
   });
 });
 
-describe("pop af", (): void =>{
+describe("pop af", (): void => {
   it("keeps low bits zero", (): void => {
     const cpu = initCPU();
     cpu.regs.b = 0xc3;
@@ -260,20 +261,20 @@ function loadDaaTestCases(): DaaTestCase[] {
     const expectedH = parseBool(line[25]);
     const expectedA = parseInt(line.slice(27, 29), 16);
     const expectedZ = expectedA === 0;
-    return {initN, initC, initH, initA, initZ, expectedN, expectedC, expectedH, expectedA, expectedZ};
+    return { initN, initC, initH, initA, initZ, expectedN, expectedC, expectedH, expectedA, expectedZ };
   }
-  const lines = readFileSync("test/fixtures/daaoutput.txt", {encoding: "utf-8"}).split("\n");
+  const lines = readFileSync("test/fixtures/daaoutput.txt", { encoding: "utf-8" }).split(EOL);
   return lines.map(makeCase);
 }
 
 describe("daa", (): void => {
   // test fixture courtesy ruyrybeyro https://github.com/ruyrybeyro/daatable/blob/master/daaoutput.txt
-  for(const testCase of loadDaaTestCases()) {
+  for (const testCase of loadDaaTestCases()) {
     it(`0x${testCase.initA.toString(16)} ${testCase.initZ ? "Z" : "z"}${testCase.initN ? "N" : "n"}${testCase.initH ? "H" : "h"}${testCase.initC ? "C" : "c"} => 0x${testCase.expectedA.toString(16)} ${testCase.expectedZ ? "Z" : "z"}${testCase.expectedN ? "N" : "n"}${testCase.expectedH ? "H" : "h"}${testCase.expectedC ? "C" : "c"}`, (): void => {
       const cpu = initCPU();
       cpu.regs.a = testCase.initA;
       cpu.f = cpu.f.setZ(testCase.initZ).setN(testCase.initN).setH(testCase.initH).setC(testCase.initC);
-      daa(cpu, {readb: readb_error, writeb: writeb_error});
+      daa(cpu, { readb: readb_error, writeb: writeb_error });
       expect(cpu.regs.a, "A").to.equal(testCase.expectedA);
       expect(cpu.f.Z(), "Z").to.equal(testCase.expectedZ);
       expect(cpu.f.N(), "N").to.equal(testCase.expectedN);
@@ -398,7 +399,7 @@ describe("add hl,hl", (): void => {
   const cpu = initCPU();
   cpu.regs.h = 0x26;
   cpu.regs.l = 0x00;
-  add_r16_r16(R16.HL, R16.HL)(cpu, {readb: readb_error, writeb: writeb_error});
+  add_r16_r16(R16.HL, R16.HL)(cpu, { readb: readb_error, writeb: writeb_error });
   expect(cpu.regs.h).to.equal(0x4c);
   expect(cpu.regs.l).to.equal(0x00);
 });
