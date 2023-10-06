@@ -2860,6 +2860,9 @@ export function step(cpu: CPU, bus: Bus): number {
     const insn = decodeInsn(cpu.pc, bus);
     cpu.pc += insn.length;
     const cycles = insn.exec(cpu, bus);
+    if ((cpu.f.valueOf() & 0x0f) !== 0) {
+      throw new Error("flag lower bits set non-zero");
+    }
     return cycles;
   } catch (err) {
     const cpuStack = stackDump(cpu, bus).map(hex16).join(" ");
