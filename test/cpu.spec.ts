@@ -346,7 +346,7 @@ describe("srl", (): void => {
     expect(cpu.f.Z(), "Z").to.be.true;
     expect(cpu.f.N(), "N").to.be.false;
     expect(cpu.f.H(), "H").to.be.false;
-    expect(cpu.f.C(), "C").to.be.false;
+    expect(cpu.f.C(), "C").to.be.true;
   });
 });
 
