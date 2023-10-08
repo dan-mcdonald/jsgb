@@ -710,12 +710,13 @@ function add_r8(reg: OP8): InstructionFunction {
   };
 }
 
-export function add_r16_r16(dest: R16, addend: R16): InstructionFunction {
+export function add_r16_r16(dest: R16, addendReg: R16): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
     const oldVal = get16(cpu, dest);
-    const newVal = (oldVal + get16(cpu, addend)) & 0xffff;
+    const addend = get16(cpu, addendReg);
+    const newVal = (oldVal + addend) & 0xffff;
     set16(cpu, dest, newVal);
-    cpu.f = cpu.f.setN(false).setH((oldVal & 0xfff) + (newVal & 0xfff) > 0xfff).setC(oldVal + newVal > 0xffff);
+    cpu.f = cpu.f.setN(false).setH((oldVal & 0x0fff) + (addend & 0x0fff) > 0x0fff).setC(oldVal + newVal > 0xffff);
     return 8;
   };
 }

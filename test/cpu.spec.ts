@@ -336,6 +336,7 @@ describe("add hl,hl", (): void => {
   add_r16_r16(R16.HL, R16.HL)(cpu, { readb: readb_error, writeb: writeb_error });
   expect(cpu.regs.h).to.equal(0x4c);
   expect(cpu.regs.l).to.equal(0x00);
+  expect(cpu.f.H()).to.be.false;
 });
 
 function loadBootRom(): Promise<Uint8Array> {
