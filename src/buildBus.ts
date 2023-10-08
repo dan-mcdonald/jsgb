@@ -4,10 +4,9 @@ import { PPU } from "./ppu";
 import { Audio } from "./audio";
 import { Cart, cartRead, cartWrite } from "./cart";
 
-export default function buildBus(bootRom: Uint8Array, cart: Cart, ppu: PPU, audio: Audio): Bus {
+export default function buildBus(bootRom: Uint8Array | null, cart: Cart, ppu: PPU, audio: Audio): Bus {
   let intEnable = 0;
   let intFlag = 0;
-  let bootRomDisable = false;
   let joyp = 0xff;
   const hram = new Uint8Array(0x7f);
   const wram = new Uint8Array(0x2000); // C000-DFFF
@@ -39,7 +38,7 @@ export default function buildBus(bootRom: Uint8Array, cart: Cart, ppu: PPU, audi
     } else if (addr >= 0xff40 && addr <= 0xff4f) {
       ppu.ioRegs[addr & 0x0f] = val;
     } else if (addr == 0xff50) {
-      bootRomDisable = true;
+      bootRom = null;
     } else if (addr >= 0xff80 && addr <= 0xfffe) {
       hram[addr - 0xff80] = val;
     } else if (addr == 0xffff) {
@@ -49,7 +48,7 @@ export default function buildBus(bootRom: Uint8Array, cart: Cart, ppu: PPU, audi
     }
   };
   const readb = function (addr: number): number {
-    if (addr >= 0x0000 && addr <= 0x00ff && !bootRomDisable) {
+    if (addr >= 0x0000 && addr <= 0x00ff && bootRom != null) {
       return bootRom[addr];
     } else if (addr <= 0x7fff || (addr >= 0xa000 && addr <= 0xbfff)) {
       return cartRead(cart, addr);

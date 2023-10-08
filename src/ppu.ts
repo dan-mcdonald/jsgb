@@ -212,7 +212,7 @@ function lcdc4(ppu: PPU): boolean {
   return (ppu.ioRegs[Register.LCDC] & (1 << 4)) != 0;
 }
 
-const LCDC_ENABLED = 1 << 7;
+export const LCDC_ENABLED = 1 << 7;
 
 function calcBgPixel(ppu: PPU, x: number, y: number): ScreenColor {
   const tileIndex = getBgTileIndex(ppu, Math.floor(x / 8), Math.floor(y / 8));
