@@ -1,4 +1,4 @@
-import { Flags, initCPU, step, maskZ, decodeInsn, pop_r16, R16, push_r16, ldi_at_r16_r8, OP8, ldd_at_r16_r8, dec_r16, add_r16_r16, daa, cp, rr } from "../src/cpu";
+import { Flags, initCPU, step, maskZ, decodeInsn, pop_r16, R16, push_r16, ldi_at_r16_r8, OP8, ldd_at_r16_r8, dec_r16, add_r16_r16, daa, cp, rr, srl } from "../src/cpu";
 import { expect } from 'chai';
 import { BusRead, BusWrite } from "../src/bus";
 import buildBus from "../src/buildBus";
@@ -337,6 +337,17 @@ describe("add hl,hl", (): void => {
   expect(cpu.regs.h).to.equal(0x4c);
   expect(cpu.regs.l).to.equal(0x00);
   expect(cpu.f.H()).to.be.false;
+});
+
+describe("srl", (): void => {
+  it("srl 0x01 znhc => 0x00 Znhc", (): void => {
+    const cpu = initCPU();
+    expect(srl(cpu, 0x01)).to.equal(0x00);
+    expect(cpu.f.Z(), "Z").to.be.true;
+    expect(cpu.f.N(), "N").to.be.false;
+    expect(cpu.f.H(), "H").to.be.false;
+    expect(cpu.f.C(), "C").to.be.false;
+  });
 });
 
 function loadBootRom(): Promise<Uint8Array> {

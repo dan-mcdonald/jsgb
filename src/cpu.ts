@@ -855,9 +855,10 @@ function rrc_r8(reg: OP8): InstructionFunction {
   };
 }
 
-function srl(cpu: CPU, val: number): number {
-  cpu.f = cpu.f.setZ(val == 0).setN(false).setH(false).setC((val & 0x01) !== 0);
-  return val >> 1;
+export function srl(cpu: CPU, val: number): number {
+  const newVal = val >> 1;
+  cpu.f = cpu.f.setZ(newVal == 0).setN(false).setH(false).setC((val & 0x01) !== 0);
+  return newVal;
 }
 
 function srl_r8(reg: OP8): InstructionFunction {
