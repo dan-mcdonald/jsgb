@@ -45,6 +45,9 @@ while (getLine(ppu) !== 0x90) {
 while (true) {
   console.log(trace(cpu, bus));
   const insn = decodeInsn(cpu.pc, bus);
+  if (insn.text == "jr   " + hex16(cpu.pc)) {
+    break;
+  }
   cpu.pc += insn.length;
   insn.exec(cpu, bus);
 }

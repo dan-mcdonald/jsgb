@@ -1,4 +1,4 @@
-import { Flags, initCPU, step, maskZ, decodeInsn, pop_r16, R16, push_r16, ldi_at_r16_r8, OP8, ldd_at_r16_r8, dec_r16, add_r16_r16, daa } from "../src/cpu";
+import { Flags, initCPU, step, maskZ, decodeInsn, pop_r16, R16, push_r16, ldi_at_r16_r8, OP8, ldd_at_r16_r8, dec_r16, add_r16_r16, daa, cp, rr } from "../src/cpu";
 import { expect } from 'chai';
 import { BusRead, BusWrite } from "../src/bus";
 import buildBus from "../src/buildBus";
@@ -282,104 +282,38 @@ describe("daa", (): void => {
       expect(cpu.f.C(), "C").to.equal(testCase.expectedC);
     });
   }
+});
 
-  // it("0x4B znhc => 0x51 znhc", (): void => {
-  //   const cpu = initCPU();
-  //   cpu.regs.a = 0x4B;
-  //   daa(cpu, {readb: readb_error, writeb: writeb_error});
-  //   expect(cpu.regs.a).to.equal(0x51);
-  //   expect(cpu.f.Z()).to.be.false;
-  //   expect(cpu.f.N()).to.be.false;
-  //   expect(cpu.f.H()).to.be.false;
-  //   expect(cpu.f.C()).to.be.false;
-  // });
-  // it("0x9A znhc => 0x00 ZnhC", (): void => {
-  //   const cpu = initCPU();
-  //   cpu.regs.a = 0x9A;
-  //   daa(cpu, {readb: readb_error, writeb: writeb_error});
-  //   expect(cpu.regs.a).to.equal(0x00);
-  //   expect(cpu.f.Z()).to.be.true;
-  //   expect(cpu.f.N()).to.be.false;
-  //   expect(cpu.f.H()).to.be.false;
-  //   expect(cpu.f.C()).to.be.true;
-  // });
-  // it("0x00 znhC => 0x60 znhC", (): void => {
-  //   const cpu = initCPU();
-  //   cpu.regs.a = 0x00;
-  //   cpu.f = cpu.f.setC(true);
-  //   daa(cpu, {readb: readb_error, writeb: writeb_error});
-  //   expect(cpu.regs.a).to.equal(0x60);
-  //   expect(cpu.f.Z()).to.be.false;
-  //   expect(cpu.f.N()).to.be.false;
-  //   expect(cpu.f.H()).to.be.false;
-  //   expect(cpu.f.C()).to.be.true;
-  // });
-  // it("0x0A znhC => 0x70 znhC", (): void => {
-  //   const cpu = initCPU();
-  //   cpu.regs.a = 0x0A;
-  //   cpu.f = cpu.f.setC(true);
-  //   daa(cpu, {readb: readb_error, writeb: writeb_error});
-  //   expect(cpu.regs.a).to.equal(0x70);
-  //   expect(cpu.f.Z()).to.be.false;
-  //   expect(cpu.f.N()).to.be.false;
-  //   expect(cpu.f.H()).to.be.false;
-  //   expect(cpu.f.C()).to.be.true;
-  // });
-  // it("0x99 znhC => 0xF9 znhC", (): void => {
-  //   const cpu = initCPU();
-  //   cpu.regs.a = 0x99;
-  //   cpu.f = cpu.f.setC(true);
-  //   daa(cpu, {readb: readb_error, writeb: writeb_error});
-  //   expect(cpu.regs.a).to.equal(0xF9);
-  //   expect(cpu.f.Z()).to.be.false;
-  //   expect(cpu.f.N()).to.be.false;
-  //   expect(cpu.f.H()).to.be.false;
-  //   expect(cpu.f.C()).to.be.true;
-  // });
-  // it("0x9A znhC => 0x00 ZnhC", (): void => {
-  //   const cpu = initCPU();
-  //   cpu.regs.a = 0x9A;
-  //   cpu.f = cpu.f.setC(true);
-  //   daa(cpu, {readb: readb_error, writeb: writeb_error});
-  //   expect(cpu.regs.a).to.equal(0x00);
-  //   expect(cpu.f.Z()).to.be.true;
-  //   expect(cpu.f.N()).to.be.false;
-  //   expect(cpu.f.H()).to.be.false;
-  //   expect(cpu.f.C()).to.be.true;
-  // });
-  // it("0xFF znhC => 0x65 znhC", (): void => {
-  //   const cpu = initCPU();
-  //   cpu.regs.a = 0xFF;
-  //   cpu.f = cpu.f.setC(true);
-  //   daa(cpu, {readb: readb_error, writeb: writeb_error});
-  //   expect(cpu.regs.a).to.equal(0x65);
-  //   expect(cpu.f.Z()).to.be.false;
-  //   expect(cpu.f.N()).to.be.false;
-  //   expect(cpu.f.H()).to.be.false;
-  //   expect(cpu.f.C()).to.be.true;
-  // });
-  // it("0x00 znHc => 0x06 znHc", (): void => {
-  //   const cpu = initCPU();
-  //   cpu.regs.a = 0x00;
-  //   cpu.f = cpu.f.setH(true);
-  //   daa(cpu, {readb: readb_error, writeb: writeb_error});
-  //   expect(cpu.regs.a).to.equal(0x06);
-  //   expect(cpu.f.Z()).to.be.false;
-  //   expect(cpu.f.N()).to.be.false;
-  //   expect(cpu.f.H()).to.be.true;
-  //   expect(cpu.f.C()).to.be.false;
-  // });
-  // it("0xE3 znHc => 0x49 znhC", (): void => {
-  //   const cpu = initCPU();
-  //   cpu.regs.a = 0xE3;
-  //   cpu.f = cpu.f.setH(true);
-  //   daa(cpu, {readb: readb_error, writeb: writeb_error});
-  //   expect(cpu.regs.a).to.equal(0x49);
-  //   expect(cpu.f.Z()).to.be.false;
-  //   expect(cpu.f.N()).to.be.false;
-  //   expect(cpu.f.H()).to.be.false;
-  //   expect(cpu.f.C()).to.be.true;
-  // });
+describe("cp", (): void => {
+  it("A=0x30, cp 0x0a => zNHc", (): void => {
+    const cpu = initCPU();
+    cpu.regs.a = 0x30;
+    cp(cpu, 0x0a);
+    expect(cpu.f.Z(), "Z").to.be.false;
+    expect(cpu.f.N(), "N").to.be.true;
+    expect(cpu.f.H(), "H").to.be.true;
+    expect(cpu.f.C(), "C").to.be.false;
+  });
+  it("A=0x90, cp 0x90 => ZNhc", (): void => {
+    const cpu = initCPU();
+    cpu.regs.a = 0x90;
+    cp(cpu, 0x90);
+    expect(cpu.f.Z(), "Z").to.be.true;
+    expect(cpu.f.N(), "N").to.be.true;
+    expect(cpu.f.H(), "H").to.be.false;
+    expect(cpu.f.C(), "C").to.be.false;
+  });
+});
+
+describe("rr", (): void => {
+  it("rr 0x47 znhc -> 0x23 znhC", (): void => {
+    const cpu = initCPU();
+    expect(rr(cpu, 0x47)).to.equal(0x23);
+    expect(cpu.f.Z(), "Z").to.be.false;
+    expect(cpu.f.N(), "N").to.be.false;
+    expect(cpu.f.H(), "H").to.be.false;
+    expect(cpu.f.C(), "C").to.be.true;
+  });
 });
 
 describe("swap a", (): void => {

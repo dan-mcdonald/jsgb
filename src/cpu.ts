@@ -646,9 +646,9 @@ function halt(cpu: CPU, _: Bus): number {
 // functionally STOP is the same as HALT but the screen turns white
 const stop = halt;
 
-function cp(cpu: CPU, val: number): void {
+export function cp(cpu: CPU, val: number): void {
   const diff = ((cpu.regs.a - val) & 0xff);
-  cpu.f = cpu.f.setZ(diff == 0).setN(true).setH(false).setC(val > cpu.regs.a);
+  cpu.f = cpu.f.setZ(diff == 0).setN(true).setH((val & 0x0f) > (cpu.regs.a & 0x0f)).setC(val > cpu.regs.a);
 }
 
 function cp_r8(reg: OP8): InstructionFunction {
@@ -814,8 +814,9 @@ function rl_r8(reg: OP8): InstructionFunction {
   };
 }
 
-function rr(cpu: CPU, val: number): number {
-  const newVal = ((val >> 1) | (val << 7)) & 0xff;
+// Rotate right through carry
+export function rr(cpu: CPU, val: number): number {
+  const newVal = ((val >> 1) | (cpu.f.C() ? 1 << 7 : 0)) & 0xff;
   cpu.f = cpu.f.setZ(newVal == 0).setN(false).setH(false).setC((val & 0x01) !== 0);
   return newVal;
 }
