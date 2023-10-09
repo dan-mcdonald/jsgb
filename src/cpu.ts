@@ -413,11 +413,11 @@ function ld_SP_HL(cpu: CPU, _: Bus) {
   return 8;
 }
 
-function ld_at_n16_r16(addr: number, reg: R16): InstructionFunction {
+export function ld_at_n16_r16(addr: number, reg: R16): InstructionFunction {
   return function(cpu: CPU, bus: Bus) {
     const val = get16(cpu, reg);
-    bus.writeb(addr, val >> 8);
-    bus.writeb(addr + 1, val & 0xff);
+    bus.writeb(addr, val & 0xff);
+    bus.writeb(addr + 1, val >> 8);
     return 20;
   };
 }

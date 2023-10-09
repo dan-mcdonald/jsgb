@@ -1,4 +1,4 @@
-import { Flags, initCPU, step, maskZ, decodeInsn, pop_r16, R16, push_r16, ldi_at_r16_r8, OP8, ldd_at_r16_r8, dec_r16, add_r16_r16, daa, cp, rr, srl, rra } from "../src/cpu";
+import { Flags, initCPU, step, maskZ, decodeInsn, pop_r16, R16, push_r16, ldi_at_r16_r8, OP8, ldd_at_r16_r8, dec_r16, add_r16_r16, daa, cp, rr, srl, rra, ld_at_n16_r16 } from "../src/cpu";
 import { expect } from 'chai';
 import { BusRead, BusWrite } from "../src/bus";
 import buildBus from "../src/buildBus";
@@ -364,6 +364,22 @@ describe("rra", (): void => {
     expect(cpu.f.N(), "N").to.be.false;
     expect(cpu.f.H(), "H").to.be.false;
     expect(cpu.f.C(), "C").to.be.true;
+  });
+});
+
+describe("ld_at_n16_r16", (): void => {
+  it("ld (dd02), sp", (): void => {
+    const cpu = initCPU();
+    cpu.regs.sp = 0x0001;
+    const writeMap = new Map<number, number>();
+    const writeb = (addr: number, val: number): void => {
+      writeMap.set(addr, val);
+    };
+    const bus = { readb: readb_error, writeb };
+    ld_at_n16_r16(0xdd02, R16.SP)(cpu, bus);
+    expect(writeMap.size).to.equal(2);
+    expect(writeMap.get(0xdd02)).to.equal(0x01);
+    expect(writeMap.get(0xdd03)).to.equal(0x00);    
   });
 });
 
