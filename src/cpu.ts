@@ -321,7 +321,6 @@ export function daa(cpu: CPU, _: Bus): number {
     }
     if (oldH || (oldA & 0x0f) > 0x09) {
       newA -= 0x06;
-      cpu.f = cpu.f.setH((newA & 0x0f) > 0x09);
     }
   } else {
     if (oldC || oldA > 0x99) {
@@ -330,11 +329,10 @@ export function daa(cpu: CPU, _: Bus): number {
     }
     if (oldH || (oldA & 0x0f) > 0x09) {
       newA += 0x06;
-      cpu.f = cpu.f.setH((oldA & 0x0f) > 0x09);
     }
   }
   cpu.regs.a = (newA &= 0xff);
-  cpu.f = cpu.f.setZ(newA == 0);
+  cpu.f = cpu.f.setZ(newA == 0).setH(false);
   return 4;
 }
 
