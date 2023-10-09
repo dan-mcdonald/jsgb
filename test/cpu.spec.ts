@@ -1,4 +1,4 @@
-import { Flags, initCPU, step, maskZ, decodeInsn, pop_r16, R16, push_r16, ldi_at_r16_r8, OP8, ldd_at_r16_r8, dec_r16, add_r16_r16, daa, cp, rr, srl } from "../src/cpu";
+import { Flags, initCPU, step, maskZ, decodeInsn, pop_r16, R16, push_r16, ldi_at_r16_r8, OP8, ldd_at_r16_r8, dec_r16, add_r16_r16, daa, cp, rr, srl, rra } from "../src/cpu";
 import { expect } from 'chai';
 import { BusRead, BusWrite } from "../src/bus";
 import buildBus from "../src/buildBus";
@@ -267,6 +267,7 @@ function loadDaaTestCases(): DaaTestCase[] {
   // return lines.map(makeCase);
   return [
     {initA: 0x0A, initZ: false, initN: false, initH: false, initC: false, expectedA: 0x10, expectedZ: false, expectedN: false, expectedH: false, expectedC: false},
+    {initA: 0x0A, initZ: false, initN: true, initH: false, initC: false, expectedA: 0x0A, expectedZ: false, expectedN: true, expectedH: false, expectedC: false},
   ];
 }
 
@@ -347,6 +348,19 @@ describe("srl", (): void => {
     const cpu = initCPU();
     expect(srl(cpu, 0x01)).to.equal(0x00);
     expect(cpu.f.Z(), "Z").to.be.true;
+    expect(cpu.f.N(), "N").to.be.false;
+    expect(cpu.f.H(), "H").to.be.false;
+    expect(cpu.f.C(), "C").to.be.true;
+  });
+});
+
+describe("rra", (): void => {
+  it("rra 0x01 znhc => 0x00 znhC", (): void => {
+    const cpu = initCPU();
+    cpu.regs.a = 0x01;
+    rra(cpu, { readb: readb_error, writeb: writeb_error });
+    expect(cpu.regs.a).to.equal(0x00);
+    expect(cpu.f.Z(), "Z").to.be.false;
     expect(cpu.f.N(), "N").to.be.false;
     expect(cpu.f.H(), "H").to.be.false;
     expect(cpu.f.C(), "C").to.be.true;

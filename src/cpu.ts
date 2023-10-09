@@ -315,11 +315,11 @@ export function daa(cpu: CPU, _: Bus): number {
   const oldN = cpu.f.N();
   const oldH = cpu.f.H();
   if (oldN) {
-    if (oldC || oldA > 0x99) {
+    if (oldC) {
       newA -= 0x60;
       cpu.f = cpu.f.setC(true);
     }
-    if (oldH || (oldA & 0x0f) > 0x09) {
+    if (oldH) {
       newA -= 0x06;
     }
   } else {
@@ -829,6 +829,14 @@ function rr_r8(reg: OP8): InstructionFunction {
   };
 }
 
+// Rotate Right through carry A
+// NB subtly different than rrc because Z is always cleared and timing is faster
+export function rra(cpu: CPU, _: Bus): number {
+  cpu.regs.a = rr(cpu, cpu.regs.a);
+  cpu.f = cpu.f.setZ(false);
+  return 4;
+}
+
 // Rotate right (not through carry) A
 // NB subtly different than rrc because Z is always cleared and timing is faster
 function rrca(cpu: CPU, _: Bus): number {
@@ -1256,7 +1264,7 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
       return {
         length,
         text: "rra  ",
-        exec: rr_r8(OP8.A),
+        exec: rra,
       };
     case 0x20:
       n8 = decodeImm8();
