@@ -719,12 +719,12 @@ export function add_r16_r16(dest: R16, addendReg: R16): InstructionFunction {
   };
 }
 
-function add_SP_s8(val: number): InstructionFunction {
+export function add_SP_s8(val: number): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
     const oldVal = get16(cpu, R16.SP);
     const newVal = (oldVal + val) & 0xffff;
     set16(cpu, R16.SP, newVal);
-    cpu.f = cpu.f.setZ(false).setN(false).setH((oldVal & 0xf) + (val & 0xf) > 0xf).setC((oldVal & 0xff) + val > 0xff);
+    cpu.f = cpu.f.setZ(false).setN(false).setH((oldVal & 0xf) + (val & 0xf) > 0xf).setC(((oldVal & 0xff) + (val & 0xff)) > 0xff);
     return 16;
   };
 }

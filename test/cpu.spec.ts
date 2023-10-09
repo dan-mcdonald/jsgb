@@ -1,4 +1,4 @@
-import { Flags, initCPU, step, maskZ, decodeInsn, pop_r16, R16, push_r16, ldi_at_r16_r8, OP8, ldd_at_r16_r8, dec_r16, add_r16_r16, daa, cp, rr, srl, rra, ld_at_n16_r16 } from "../src/cpu";
+import { Flags, initCPU, step, maskZ, decodeInsn, pop_r16, R16, push_r16, ldi_at_r16_r8, OP8, ldd_at_r16_r8, dec_r16, add_r16_r16, daa, cp, rr, srl, rra, ld_at_n16_r16, add_SP_s8 } from "../src/cpu";
 import { expect } from 'chai';
 import { BusRead, BusWrite } from "../src/bus";
 import buildBus from "../src/buildBus";
@@ -395,6 +395,29 @@ describe("ld_at_n16_r16", (): void => {
     expect(writeMap.size).to.equal(2);
     expect(writeMap.get(0xdd02)).to.equal(0x01);
     expect(writeMap.get(0xdd03)).to.equal(0x00);
+  });
+});
+
+describe("add_SP_s8", (): void => {
+  it("sp=0x00FF add sp, 1", (): void => {
+    const cpu = initCPU();
+    cpu.regs.sp = 0x00ff;
+    add_SP_s8(1)(cpu, { readb: readb_error, writeb: writeb_error });
+    expect(cpu.regs.sp).to.equal(0x0100);
+    expect(cpu.f.Z(), "Z").to.be.false;
+    expect(cpu.f.N(), "N").to.be.false;
+    expect(cpu.f.H(), "H").to.be.true;
+    expect(cpu.f.C(), "C").to.be.true;
+  });
+  it("sp=0x0001 add sp, -1", (): void => {
+    const cpu = initCPU();
+    cpu.regs.sp = 0x0001;
+    add_SP_s8(-1)(cpu, { readb: readb_error, writeb: writeb_error });
+    expect(cpu.regs.sp).to.equal(0x0000);
+    expect(cpu.f.Z(), "Z").to.be.false;
+    expect(cpu.f.N(), "N").to.be.false;
+    expect(cpu.f.H(), "H").to.be.true;
+    expect(cpu.f.C(), "C").to.be.true;
   });
 });
 
