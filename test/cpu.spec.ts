@@ -266,8 +266,8 @@ function loadDaaTestCases(): DaaTestCase[] {
   // const lines = readFileSync("test/fixtures/daaoutput.txt", { encoding: "utf-8" }).split(EOL);
   // return lines.map(makeCase);
   return [
-    {initA: 0x0A, initZ: false, initN: false, initH: false, initC: false, expectedA: 0x10, expectedZ: false, expectedN: false, expectedH: false, expectedC: false},
-    {initA: 0x0A, initZ: false, initN: true, initH: false, initC: false, expectedA: 0x0A, expectedZ: false, expectedN: true, expectedH: false, expectedC: false},
+    { initA: 0x0A, initZ: false, initN: false, initH: false, initC: false, expectedA: 0x10, expectedZ: false, expectedN: false, expectedH: false, expectedC: false },
+    { initA: 0x0A, initZ: false, initN: true, initH: false, initC: false, expectedA: 0x0A, expectedZ: false, expectedN: true, expectedH: false, expectedC: false },
   ];
 }
 
@@ -333,14 +333,29 @@ describe("swap a", (): void => {
   });
 });
 
-describe("add hl,hl", (): void => {
-  const cpu = initCPU();
-  cpu.regs.h = 0x26;
-  cpu.regs.l = 0x00;
-  add_r16_r16(R16.HL, R16.HL)(cpu, { readb: readb_error, writeb: writeb_error });
-  expect(cpu.regs.h).to.equal(0x4c);
-  expect(cpu.regs.l).to.equal(0x00);
-  expect(cpu.f.H()).to.be.false;
+describe("add_r16_r16", (): void => {
+  it("add hl,hl", (): void => {
+    const cpu = initCPU();
+    cpu.regs.h = 0x26;
+    cpu.regs.l = 0x00;
+    add_r16_r16(R16.HL, R16.HL)(cpu, { readb: readb_error, writeb: writeb_error });
+    expect(cpu.regs.h).to.equal(0x4c);
+    expect(cpu.regs.l).to.equal(0x00);
+    expect(cpu.f.H()).to.be.false;
+  });
+  it("add hl,sp", (): void => {
+    const cpu = initCPU();
+    cpu.regs.h = 0x00;
+    cpu.regs.l = 0x01;
+    cpu.regs.sp = 0xffff;
+    add_r16_r16(R16.HL, R16.SP)(cpu, { readb: readb_error, writeb: writeb_error });
+    expect(cpu.regs.h).to.equal(0x00);
+    expect(cpu.regs.l).to.equal(0x00);
+    expect(cpu.f.Z(), "Z").to.be.false;
+    expect(cpu.f.N(), "N").to.be.false;
+    expect(cpu.f.H(), "H").to.be.true;
+    expect(cpu.f.C(), "C").to.be.true;
+  });
 });
 
 describe("srl", (): void => {
@@ -379,7 +394,7 @@ describe("ld_at_n16_r16", (): void => {
     ld_at_n16_r16(0xdd02, R16.SP)(cpu, bus);
     expect(writeMap.size).to.equal(2);
     expect(writeMap.get(0xdd02)).to.equal(0x01);
-    expect(writeMap.get(0xdd03)).to.equal(0x00);    
+    expect(writeMap.get(0xdd03)).to.equal(0x00);
   });
 });
 

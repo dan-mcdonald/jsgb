@@ -714,7 +714,7 @@ export function add_r16_r16(dest: R16, addendReg: R16): InstructionFunction {
     const addend = get16(cpu, addendReg);
     const newVal = (oldVal + addend) & 0xffff;
     set16(cpu, dest, newVal);
-    cpu.f = cpu.f.setN(false).setH((oldVal & 0x0fff) + (addend & 0x0fff) > 0x0fff).setC(oldVal + newVal > 0xffff);
+    cpu.f = cpu.f.setN(false).setH((oldVal & 0x0fff) + (addend & 0x0fff) > 0x0fff).setC(oldVal + addend > 0xffff);
     return 8;
   };
 }
