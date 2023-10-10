@@ -352,7 +352,7 @@ function set_r8(bit: number, reg: OP8): InstructionFunction {
   };
 }
 
-function bit_r8(bit: number, reg: OP8): InstructionFunction {
+export function bit_r8(bit: number, reg: OP8): InstructionFunction {
   return function (cpu: CPU, bus: Bus): number {
     const val = get8(cpu, bus, reg);
     cpu.f = cpu.f.setZ((val & (1 << bit)) === 0).setN(false).setH(true);
@@ -1020,7 +1020,7 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
         return {
           length,
           text: "bit  " + decodeBit + "," + opndText,
-          exec: bit_r8(decodeBit, OP8.B),
+          exec: bit_r8(decodeBit, opnd),
         };
       case 0x10:
       case 0x11:
