@@ -3,3 +3,4 @@ build/
 .yarn/
 dist/*
 !dist/index.html
+*.doctor

@@ -398,7 +398,7 @@ function ld_r16_n16(target: R16, val: number): InstructionFunction {
   };
 }
 
-function ld_HL_SP_plus_n8(val: number): InstructionFunction {
+export function ld_HL_SP_plus_n8(val: number): InstructionFunction {
   return function (cpu: CPU, _: Bus): number {
     const oldVal = get16(cpu, R16.SP);
     const newVal = (oldVal + val) & 0xffff;
@@ -719,13 +719,13 @@ export function add_r16_r16(dest: R16, addendReg: R16): InstructionFunction {
   };
 }
 
-export function add_SP_s8(val: number): InstructionFunction {
-  return function (cpu: CPU, _: Bus): number {
-    const oldVal = get16(cpu, R16.SP);
+export function add_r16_r16_imm(cycles: number, dest: R16, addendReg: R16, val: number): InstructionFunction {
+  return function(cpu: CPU, _: Bus): number {
+    const oldVal = get16(cpu, addendReg);
     const newVal = (oldVal + val) & 0xffff;
-    set16(cpu, R16.SP, newVal);
+    set16(cpu, dest, newVal);
     cpu.f = cpu.f.setZ(false).setN(false).setH((oldVal & 0xf) + (val & 0xf) > 0xf).setC(((oldVal & 0xff) + (val & 0xff)) > 0xff);
-    return 16;
+    return cycles;
   };
 }
 
@@ -2477,7 +2477,7 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
       return {
         length,
         text: "add  sp," + hexs8(s8),
-        exec: add_SP_s8(s8),
+        exec: add_r16_r16_imm(16, R16.SP, R16.SP, s8),
       };
     case 0xE9:
       return {
@@ -2559,7 +2559,7 @@ export function decodeInsn(addr: number, bus: Bus): Instruction {
       return {
         length,
         text: "ld   hl,sp" + hexs8(s8),
-        exec: ld_HL_SP_plus_n8(s8),
+        exec: add_r16_r16_imm(12, R16.HL, R16.SP, s8),
       };
     case 0xF9:
       return {

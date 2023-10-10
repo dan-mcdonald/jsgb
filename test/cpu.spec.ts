@@ -1,4 +1,4 @@
-import { Flags, initCPU, step, maskZ, decodeInsn, pop_r16, R16, push_r16, ldi_at_r16_r8, OP8, ldd_at_r16_r8, dec_r16, add_r16_r16, daa, cp, rr, srl, rra, ld_at_n16_r16, add_SP_s8 } from "../src/cpu";
+import { Flags, initCPU, step, maskZ, decodeInsn, pop_r16, R16, push_r16, ldi_at_r16_r8, OP8, ldd_at_r16_r8, dec_r16, add_r16_r16, daa, cp, rr, srl, rra, ld_at_n16_r16, add_r16_r16_imm } from "../src/cpu";
 import { expect } from 'chai';
 import { BusRead, BusWrite } from "../src/bus";
 import buildBus from "../src/buildBus";
@@ -398,11 +398,11 @@ describe("ld_at_n16_r16", (): void => {
   });
 });
 
-describe("add_SP_s8", (): void => {
+describe("add_r16_r16_imm", (): void => {
   it("sp=0x00FF add sp, 1", (): void => {
     const cpu = initCPU();
     cpu.regs.sp = 0x00ff;
-    add_SP_s8(1)(cpu, { readb: readb_error, writeb: writeb_error });
+    add_r16_r16_imm(16, R16.SP, R16.SP, 1)(cpu, { readb: readb_error, writeb: writeb_error });
     expect(cpu.regs.sp).to.equal(0x0100);
     expect(cpu.f.Z(), "Z").to.be.false;
     expect(cpu.f.N(), "N").to.be.false;
@@ -412,8 +412,19 @@ describe("add_SP_s8", (): void => {
   it("sp=0x0001 add sp, -1", (): void => {
     const cpu = initCPU();
     cpu.regs.sp = 0x0001;
-    add_SP_s8(-1)(cpu, { readb: readb_error, writeb: writeb_error });
+    add_r16_r16_imm(16, R16.SP, R16.SP, -1)(cpu, { readb: readb_error, writeb: writeb_error });
     expect(cpu.regs.sp).to.equal(0x0000);
+    expect(cpu.f.Z(), "Z").to.be.false;
+    expect(cpu.f.N(), "N").to.be.false;
+    expect(cpu.f.H(), "H").to.be.true;
+    expect(cpu.f.C(), "C").to.be.true;
+  });
+  it("hl=0x0000 sp=0x0001 ld hl, sp-1 => hl=0x0000 znHC", (): void => {
+    const cpu = initCPU();
+    cpu.regs.sp = 0x0001;
+    add_r16_r16_imm(12, R16.HL, R16.SP, -1)(cpu, { readb: readb_error, writeb: writeb_error });
+    expect(cpu.regs.h).to.equal(0x00);
+    expect(cpu.regs.l).to.equal(0x00);
     expect(cpu.f.Z(), "Z").to.be.false;
     expect(cpu.f.N(), "N").to.be.false;
     expect(cpu.f.H(), "H").to.be.true;
