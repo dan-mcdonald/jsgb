@@ -179,8 +179,8 @@ describe("pop bc", (): void => {
     cpu.regs.sp = 0xfffa;
     function readb(addr: number): number {
       switch (addr) {
-        case 0xfffb: return 0xce;
-        case 0xfffc: return 0x04;
+        case 0xfffa: return 0xce;
+        case 0xfffb: return 0x04;
         default: throw Error("unexpected readb addr: " + hex16(addr));
       }
     }
@@ -192,8 +192,8 @@ describe("pop bc", (): void => {
   });
 });
 
-describe("push bc", (): void => {
-  it("pushes 0x04CE", (): void => {
+describe("push", (): void => {
+  it("bc=0x04CE push bc", (): void => {
     const cpu = initCPU();
     cpu.regs.sp = 0xfffc;
     cpu.regs.b = 0x04;
@@ -204,9 +204,20 @@ describe("push bc", (): void => {
     };
     push_r16(R16.BC)(cpu, { readb: readb_error, writeb });
     expect(cpu.regs.sp).to.equal(0xfffa);
-    expect(writeMap.get(0xfffc)).to.equal(0x04);
-    expect(writeMap.get(0xfffb)).to.equal(0xce);
-    expect(writeMap.size).to.equal(2);
+    expect([...writeMap.entries()]).to.deep.equal([[0xfffa, 0xce], [0xfffb, 0x04]]);
+  });
+  it("de=0xdefb push de", (): void => {
+    const cpu = initCPU();
+    cpu.regs.sp = 0xdf80;
+    cpu.regs.d = 0xde;
+    cpu.regs.e = 0xfb;
+    const writeMap = new Map<number, number>();
+    const writeb = (addr: number, val: number): void => {
+      writeMap.set(addr, val);
+    };
+    push_r16(R16.DE)(cpu, { readb: readb_error, writeb });
+    expect(cpu.regs.sp).to.equal(0xdf7e);
+    expect([...writeMap.entries()]).to.deep.equal([[0xdf7e, 0xfb], [0xdf7f, 0xde]]);
   });
 });
 

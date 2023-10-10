@@ -1,5 +1,5 @@
-import { Bus } from "./bus";
-import { hex8, hex16, u8tos8, make16, break16, hexs8 } from "./util";
+import { Bus, read16, write16 } from "./bus";
+import { hex8, hex16, u8tos8, hexs8 } from "./util";
 import { interruptVector, interruptPending, clearInterrupt } from "./interrupt";
 
 type InstructionFunction = (cpu: CPU, bus: Bus) => number;
@@ -563,17 +563,14 @@ function dec_r8(reg: OP8): InstructionFunction {
 }
 
 function push16(cpu: CPU, bus: Bus, val: number): void {
-  const [hi, lo] = break16(val);
   cpu.regs.sp -= 2;
-  bus.writeb(cpu.regs.sp + 1, lo);
-  bus.writeb(cpu.regs.sp + 2, hi);
+  write16(bus, cpu.regs.sp, val);
 }
 
 function pop16(cpu: CPU, bus: Bus): number {
-  const hi = bus.readb(cpu.regs.sp + 2);
-  const lo = bus.readb(cpu.regs.sp + 1);
+  const val = read16(bus, cpu.regs.sp);
   cpu.regs.sp += 2;
-  return make16(hi, lo);
+  return val;
 }
 
 export function pop_r16(reg: R16): InstructionFunction {
