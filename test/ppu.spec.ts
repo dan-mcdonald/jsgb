@@ -126,13 +126,13 @@ describe("ppu", (): void => {
 
     expect(PPU.bgTileImageVramOffset(false, 0)).to.equal(0x1000 + 0 * 0);
     expect(PPU.bgTileImageVramOffset(false, 1)).to.equal(0x1000 + 16 * 1);
-    // expect(bgTileImageVramOffset(true, 128)).to.equal(16 * 128);
-    // expect(bgTileImageVramOffset(true, 129)).to.equal(16 * 129);
+    expect(PPU.bgTileImageVramOffset(false, 0xff)).to.equal(0x1000 - 16);
+    expect(PPU.bgTileImageVramOffset(false, 0xfe)).to.equal(0x1000 - 16*2);
 
     for(let i = 0; i < 256; i++) {
       if (i < 128) {
         expect(PPU.bgTileImageVramOffset(false, i) - 0x1000).to.equal(PPU.bgTileImageVramOffset(true, i));
-      } 
+      }
       // else {
       //   expect(bgTileImageVramOffset(true, i)).to.equal(bgTileImageVramOffset(false, i));
       // }

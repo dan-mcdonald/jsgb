@@ -330,7 +330,7 @@ export function getBgTileIndex(ppu: PPU, x: number, y: number): number {
 /** Get the offset within the VRAM where the tile data begins for the specified tile index */
 export function bgTileImageVramOffset(lcdc4: boolean, index: number): number {
   if (!lcdc4 && index > 127) {
-    throw Error("TODO implement signed BG/Win VRAM tile data");
+    index -= 0x100; // adjust signed
   }
   return (lcdc4 ? 0x0000 : 0x1000) + (index * 16);
 }
