@@ -3,15 +3,20 @@ import { hex8, hex16 } from "./util";
 import { PPU } from "./ppu";
 import { Audio } from "./audio";
 import { Cart, cartRead, cartWrite } from "./cart";
+import { Timer } from "./timer";
+import { InterruptManager } from "./interruptManager";
 
-export default function buildBus(bootRom: Uint8Array | null, cart: Cart, ppu: PPU, audio: Audio): Bus {
+export default function buildBus(interruptManager: InterruptManager, bootRom: Uint8Array | null, cart: Cart, ppu: PPU, audio: Audio, timer: Timer): Bus {
   let intEnable = 0;
-  let intFlag = 0;
   let joyp = 0xff;
+  let serialData = 0xff;
   const hram = new Uint8Array(0x7f);
   const wram = new Uint8Array(0x2000); // C000-DFFF
 
   const writeb = function (addr: number, val: number): void {
+    // if (addr == 0xdf7e) {
+    //   throw new Error(`writeb ${hex16(addr)} ${hex8(val)}`);
+    // }
     if (addr <= 0x7fff || (addr >= 0xa000 && addr <= 0xbfff)) {
       cartWrite(cart, addr, val);
     } else if (addr >= 0x8000 && addr <= 0x9fff) {
@@ -23,16 +28,18 @@ export default function buildBus(bootRom: Uint8Array | null, cart: Cart, ppu: PP
         throw new Error(`Unexpected value ${hex8(val)} write to JOYP`);
       }
       joyp = 0xcf | val;
-    } else if (addr == 0xff01 || // Serial transfer data
-      addr == 0xff02) { // Serial transfer control
-      // Serial not implemented
-    } else if (addr == 0xff07) {// Timer Control
-      const enable = (val & 0x04) != 0;
-      if (enable) {
-        throw new Error("Timer enable not implemented");
+    } else if (addr == 0xff01) { // Serial transfer data
+      serialData = val;
+    } else if (addr == 0xff02) { // Serial transfer control
+      if (val == 0x81) {
+        console.error(String.fromCharCode(serialData));
+      } else {
+        throw new Error(`Unexpected value ${hex8(val)} write to SB`);
       }
+    } else if (addr >= 0xff04 && addr <= 0xff07) {// Timer
+      timer.writeRegister(addr - 0xff04, val);
     } else if (addr == 0xff0f) {
-      intFlag = val;
+      interruptManager.write(val);
     } else if (addr >= 0xff10 && addr <= 0xff3f) {
       audio.ioRegs[addr - 0xff10] = val;
     } else if (addr >= 0xff40 && addr <= 0xff4f) {
@@ -57,7 +64,7 @@ export default function buildBus(bootRom: Uint8Array | null, cart: Cart, ppu: PP
     } else if (addr == 0xff00) {
       return joyp;
     } else if (addr == 0xff0f) {
-      return intFlag;
+      return interruptManager.read();
     } else if (addr >= 0xff10 && addr <= 0xff3f) {
       return audio.ioRegs[addr - 0xff10];
     } else if (addr >= 0xff40 && addr <= 0xff4f) {

@@ -3,10 +3,12 @@ import React, { MutableRefObject, useEffect, useRef } from "react";
 import { use, useState, useCallback, KeyboardEvent } from "react";
 import * as PPU from "./ppu";
 import { audioInit } from "./audio";
+import { init as timerInit} from "./timer";
 import * as CPU from "./cpu";
 import buildBus from "./buildBus";
 import { cartBuild } from './cart';
 import { hex16, hex8 } from './util';
+import { initInterruptManager } from './interruptManager';
 
 enum RunState {
   Stopped,
@@ -64,13 +66,15 @@ export default function Emulator({ bootRomPromise, cartPromise }: { bootRomPromi
   const bootRom = use(bootRomPromise);
   const cart = use(cartPromise);
   const [runState, setRunState] = useState(RunState.Stopped);
+  const interruptManager = initInterruptManager();
   const [cpu, setCpu] = useState(CPU.initCPU());
   const [ppu, setPpu] = useState(PPU.ppuBuild());
   const audio = audioInit();
-  const [bus, setBus] = useState(buildBus(bootRom, cartBuild(cart), ppu, audio));
+  const timer = timerInit(interruptManager.requestTimerInterrupt);
+  const [bus, setBus] = useState(buildBus(interruptManager, bootRom, cartBuild(cart), ppu, audio, timer));
   const [cycleCount, setCycleCount] = useState(0);
   const [breakPoints, setBreakPoints] = useState<number[]>([]);
-  const screenContextRef: MutableRefObject<null | CanvasRenderingContext2D> = useRef(null);
+  const screenContextRef = useRef<CanvasRenderingContext2D | null>(null);
 
   const screenRef = useCallback((screenElem: HTMLCanvasElement | null) => {
     if (screenElem) {
@@ -100,6 +104,7 @@ export default function Emulator({ bootRomPromise, cartPromise }: { bootRomPromi
         frameCycles += cycles;
         for (let i = 0; i < cycles; i++) {
           PPU.tick(ppu, bus);
+          timer.tick();
         }
         if (breakPoints.includes(cpu.pc)) {
           frameDone = true;

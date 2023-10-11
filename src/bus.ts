@@ -4,7 +4,6 @@ export interface BusWrite {
 
 export interface BusRead {
   (addr: number): number;
-
 }
 
 export interface Bus {

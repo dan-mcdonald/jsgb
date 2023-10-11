@@ -1,12 +1,14 @@
 import buildBus from "./buildBus";
-import { CPU, Flags, decodeInsn, initCPU } from "./cpu";
+import { CPU, Flags, decodeInsn, initCPU, step } from "./cpu";
 import { argv } from "process";
 import { LCDC_ENABLED, Register, getLine, ppuBuild, tick } from "./ppu";
 import { audioInit } from "./audio";
+import { init as timerInit } from "./timer";
 import { cartBuild } from "./cart";
 import { readFileSync as readFile } from "fs";
 import { hex16, hex8 } from "./util";
 import { Bus } from "./bus";
+import { initInterruptManager } from "./interruptManager";
 
 const args = argv.slice(2);
 if (args.length !== 1) {
@@ -32,22 +34,42 @@ cpu.regs.l = 0x4d;
 cpu.regs.sp = 0xfffe;
 cpu.pc = 0x100;
 
+const interruptManager = initInterruptManager();
 const ppu = ppuBuild();
 ppu.ioRegs[Register.LCDC] |= LCDC_ENABLED;
 const audio = audioInit();
 const cart = cartBuild(cartBytes);
-const bus = buildBus(null, cart, ppu, audio);
+const timer = timerInit(interruptManager.requestTimerInterrupt);
+const bus = buildBus(interruptManager, null, cart, ppu, audio, timer);
 
 while (getLine(ppu) !== 0x90) {
   tick(ppu, bus);
 }
 
+let haltSteps = 0;
+
 while (true) {
-  console.log(trace(cpu, bus));
+  if (!cpu.halt) {
+    if(cpu.pc != 0x0050) { // my emulator treats the interrupt call as its own step, doctor expects this to be skipped
+      console.log(trace(cpu, bus));
+    }
+    haltSteps = 0;
+  } else {
+    haltSteps++;
+    if (haltSteps > 10000) {
+      console.error("stuck halted");
+      break;
+    }
+  }
+  // if (cpu.pc == 0xc679) {
+  //   console.error("0xdf7e = " + hex8(bus.readb(0xdf7e)));
+  // }
   const insn = decodeInsn(cpu.pc, bus);
   if (insn.text == "jr   " + hex16(cpu.pc)) {
     break;
   }
-  cpu.pc += insn.length;
-  insn.exec(cpu, bus);
+  let cycles = step(cpu, bus);
+  while (cycles-- > 0) {
+    timer.tick();
+  }
 }

@@ -7,11 +7,13 @@ import { readFileSync } from "fs";
 import { cartBuild } from "../src/cart";
 import * as PPU from "../src/ppu";
 import { audioInit } from "../src/audio";
+import { init as timerInit } from "../src/timer";
 import { load as bessLoad } from "../src/bess";
 import { hex16, hex8 } from "../src/util";
 import { globSync as glob } from "glob";
 import { basename } from "path";
 import { EOL } from "os";
+import { initInterruptManager } from "../src/interruptManager";
 
 const readb_error = (_: number): number => { throw new Error("unexpected read"); };
 const writeb_error = (_: number, __: number): void => { throw new Error("unexpected write"); };
@@ -466,12 +468,14 @@ function loadCart(): Promise<Uint8Array> {
 describe("bootrom", (): void => {
   it("vram matches", async (): Promise<void> => {
     const cpu = initCPU();
+    const interruptManager = initInterruptManager();
     const bootRom = await loadBootRom();
     const cart = cartBuild(await loadCart());
     const ppu = PPU.ppuBuild();
     const audio = audioInit();
+    const timer = timerInit(interruptManager.requestTimerInterrupt);
 
-    const bus = buildBus(bootRom, cart, ppu, audio);
+    const bus = buildBus(interruptManager, bootRom, cart, ppu, audio, timer);
     while (cpu.pc !== 0x0100) {
       const cycles = step(cpu, bus);
       for (let i = 0; i < cycles; i++) {
