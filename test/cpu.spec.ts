@@ -471,7 +471,7 @@ describe("bootrom", (): void => {
     const interruptManager = initInterruptManager();
     const bootRom = await loadBootRom();
     const cart = cartBuild(await loadCart());
-    const ppu = PPU.ppuBuild();
+    const ppu = new PPU.PPU();
     const audio = audioInit();
     const timer = timerInit(interruptManager.requestTimerInterrupt);
 
@@ -479,7 +479,7 @@ describe("bootrom", (): void => {
     while (cpu.pc !== 0x0100) {
       const cycles = step(cpu, bus);
       for (let i = 0; i < cycles; i++) {
-        PPU.tick(ppu, bus);
+        ppu.tick(bus);
       }
     }
     const bess = bessLoad(await readFile("test/fixtures/bootend.sna"));
@@ -487,7 +487,7 @@ describe("bootrom", (): void => {
     for (let i = 0; i < 0x20; i++) {
       const baseAddr = i * 0x100;
       const endAddr = baseAddr + 0x100;
-      expect(ppu.vram.slice(baseAddr, endAddr), "vram 0x" + baseAddr.toString(16)).to.deep.equal(bess.vram.slice(baseAddr, endAddr));
+      expect(ppu._vram.slice(baseAddr, endAddr), "vram 0x" + baseAddr.toString(16)).to.deep.equal(bess.vram.slice(baseAddr, endAddr));
     }
   });
 });

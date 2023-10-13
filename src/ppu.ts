@@ -125,6 +125,7 @@ export enum Register {
   WY,
   WX,
 }
+export const REG_SIZE = Register.WX+1;
 
 export enum Mode {
   ZERO,
@@ -133,176 +134,202 @@ export enum Mode {
   THREE,
 }
 
-export interface PPU {
-  ioRegs: Uint8Array;
-  vram: Uint8Array;
-  oam: Uint8Array;
-  lineDot: number;
-  screenImage: ScreenColor[]
-}
+const STAT_LYC = 0x04;
+const STAT_MODE = 0x03;
 
-export function ppuBuild(): PPU {
-  const ioRegs = new Uint8Array(Register.WX + 1);
-  ioRegs[Register.STAT] = 0x84 | Mode.TWO;
-  ioRegs[Register.DMA] = 0xFF;
-  ioRegs[Register.BGP] = 0xFC;
-  ioRegs[Register.OBP0] = ioRegs[Register.OBP1] = 0xFF;
-  return {
-    ioRegs,
-    vram: new Uint8Array(0x2000),
-    oam: new Uint8Array(0xA0),
-    lineDot: 0,
-    screenImage: Array<ScreenColor>(SCREEN_WIDTH * SCREEN_HEIGHT).fill(ScreenColor.WHITE),
-  };
-}
+export class PPU {
+  _lineDot = 0;
+  _mode = Mode.TWO;
+  readonly screenImage = Array<ScreenColor>(SCREEN_WIDTH * SCREEN_HEIGHT).fill(ScreenColor.WHITE);
+  readonly _vram = new Uint8Array(0x2000);
+  _LCDC = 0x00;
+  _STAT = 0x84;
+  _SCY = 0x00;
+  _SCX = 0x00;
+  _LY = 0x00;  
+  _LYC = 0x00;
+  _DMA = 0xff;
+  _BGP = 0xfc;
+  _OBP0 = 0xff;
+  _OBP1 = 0xff;
+  _WY = 0x00;
+  _WX = 0x00;
 
-const statModeMask = 0x03;
-
-export function getMode(ppu: PPU): Mode {
-  return (ppu.ioRegs[Register.STAT] & statModeMask) as Mode;
-}
-
-function setMode(ppu: PPU, mode: Mode): void {
-  ppu.ioRegs[Register.STAT] = (ppu.ioRegs[Register.STAT] & (~statModeMask)) | mode;
-}
-
-export function getLine(ppu: PPU): number {
-  return ppu.ioRegs[Register.LY];
-}
-
-function setLine(ppu: PPU, line: number): void {
-  ppu.ioRegs[Register.LY] = line;
-}
-
-function getDMASrcAddr(ppu: PPU): number | null {
-  const regVal = ppu.ioRegs[Register.DMA];
-  if (regVal > 0xDF) {
-    return null;
+  readIo(reg: Register): number {
+    switch(reg) {
+      case Register.LCDC: return this._LCDC;
+      case Register.STAT: return this._STAT | (this._LY == this._LYC ? STAT_LYC : 0x00) | this._mode;
+      case Register.SCY: return this._SCY;
+      case Register.SCX: return this._SCX;
+      case Register.LY: return this._LY;
+      case Register.LYC: return this._LYC;
+      case Register.DMA: return this._DMA;
+      case Register.BGP: return this._BGP;
+      case Register.OBP0: return this._OBP0;
+      case Register.OBP1: return this._OBP1;
+      case Register.WY: return this._WY;
+      case Register.WX: return this._WX;
+    }
   }
-  return regVal * 0x0100;
-}
-
-function clearDMA(ppu: PPU): void {
-  ppu.ioRegs[Register.DMA] = 0xFF;
-}
-
-const statLYCFlagMask = 0x04;
-
-function setLYCoincidence(ppu: PPU, val: boolean): void {
-  if (val) {
-    ppu.ioRegs[Register.STAT] |= statLYCFlagMask;
-  } else {
-    ppu.ioRegs[Register.STAT] &= ~statLYCFlagMask;
+  writeIo(reg: Register, val: number): void {
+    switch(reg) {
+      case Register.LCDC: this._LCDC = val; break;
+      case Register.STAT: this._STAT = val & ~(STAT_LYC | STAT_MODE); break;
+      case Register.SCY: this._SCY = val; break;
+      case Register.SCX: this._SCX = val; break;
+      case Register.LY: this._LY = val; break;
+      case Register.LYC: this._LYC = val; break;
+      case Register.DMA: this._DMA = val; break;
+      case Register.BGP: this._BGP = val; break;
+      case Register.OBP0: this._OBP0 = val; break;
+      case Register.OBP1: this._OBP1 = val; break;
+      case Register.WY: this._WY = val; break;
+      case Register.WX: this._WX = val; break;
+    }
   }
-}
+  readVram(addr: number): number {
+    return this._vram[addr];
+  }
+  writeVram(addr: number, val: number): void {
+    this._vram[addr] = val;
+  }
 
-function getLYCompare(ppu: PPU): number {
-  return ppu.ioRegs[Register.LYC];
-}
-
-function getY(ppu: PPU): number {
-  return ppu.ioRegs[Register.LY];
+  _oam = new Uint8Array(0xA0);
+  readOam(addr: number): number {
+    return this._oam[addr];
+  }
+  writeOam(addr: number, val: number): void {
+    this._oam[addr] = val;
+  }
+  _getDMASrcAddr(): number | null {
+    if (this._DMA > 0xDF) {
+      return null;
+    }
+    return this._DMA * 0x0100;
+  }
+  _clearDMA(): void {
+    this._DMA = 0xFF;
+  }
+  _makeBgImage(): ImageData {
+    const canvas = new OffscreenCanvas(256, 256);
+    const ctx = canvas.getContext("2d");
+    if (ctx == null) {
+      throw new Error("Failed to get 2d context");
+    }
+    for (let y = 0; y < 32; y++) {
+      for (let x = 0; x < 32; x++) {
+        const tileIndex = this._getBgTileIndex(x, y);
+        const tileAddr = bgTileImageVramOffset((this._LCDC & LCDC_BG_TILE_DATA_AREA) != 0, tileIndex);
+        const tile = TileData(this._vram.slice(tileAddr, tileAddr + 16));
+        const tilePalette = makeTilePaletteImage(tile);
+        const tileImage = makeBgTileImage(tilePalette, this._BGP, screenPalette);
+        ctx.putImageData(tileImage, x * 8, y * 8);
+      }
+    }
+    return ctx.getImageData(0, 0, 256, 256);
+  }
+  _getBgTileIndex(x: number, y: number): number {
+    if (x < 0 || x > 31 || y < 0 || y > 31) {
+      throw new Error(`Invalid tile coordinates (${x}, ${y})`);
+    }
+    const bgTileMapBase = (this._LCDC & LCDC_BG_TILE_MAP_AREA) ? 0x1C00 : 0x1800;
+    const bgTileMapOffset = (y * 32) + x;
+    const bgTileMapAddr = bgTileMapBase + bgTileMapOffset;
+    const tileIndex = this._vram[bgTileMapAddr];
+    return tileIndex;
+  }
+  _calcBgPixel(x: number, y: number): ScreenColor {
+    const tileIndex = this._getBgTileIndex(Math.floor(x / 8), Math.floor(y / 8));
+    const tileAddr = bgTileImageVramOffset((this._LCDC & LCDC_BG_TILE_DATA_AREA) !== 0, tileIndex);
+    const tile = TileData(this._vram.slice(tileAddr, tileAddr + 16));
+    const tiley = y % 8;
+    const tilex = x % 8;
+    const [byte1, byte2] = [tile.tileData[tiley * 2], tile.tileData[tiley * 2 + 1]];
+    const highBit = (byte2 >> (7 - tilex)) & 0x01;
+    const lowBit = (byte1 >> (7 - tilex)) & 0x01;
+    const paletteIndex = (highBit << 1) | lowBit;
+    return screenColorForPalette(this._BGP, paletteIndex);
+  }
+  _calcScreenPixel(x: number, y: number): ScreenColor {
+    if (x < 0 || x > SCREEN_WIDTH || y < 0 || y > SCREEN_HEIGHT) {
+      throw new Error(`Invalid pixel coordinates (${x}, ${y})`);
+    }
+    const bgx = (this._SCX + x) % BG_WIDTH;
+    const bgy = (this._SCY + y) % BG_HEIGHT;
+    const bgPixel = this._calcBgPixel(bgx, bgy);
+    // TODO Window
+    // TODO OAM
+    return bgPixel;
+  }
+  _setPixel(x: number, y: number, color: ScreenColor): void {
+    this.screenImage[y * SCREEN_WIDTH + x] = color;
+  }
+  _drawPixel(x: number): void {
+    const y = this._LY;
+    this._setPixel(x, y, this._calcScreenPixel(x, y));
+  }
+  tick(bus: Bus): void {
+    if ((this._LCDC & LCDC_ENABLED) === 0) {
+      return;
+    }
+    this._lineDot++;
+  
+    const dmaSrcAddr = this._getDMASrcAddr();
+    if (dmaSrcAddr != null) {
+      for (let i = 0; i < this._oam.length; i++) {
+        this._oam[i] = bus.readb(dmaSrcAddr + i);
+      }
+      this._clearDMA();
+    }
+  
+    switch (this._mode) {
+      case Mode.ZERO:
+        if (this._lineDot === 456) {
+          this._lineDot = 0;
+          this._LY++;
+          if (this._LY === 144) {
+            this._mode = Mode.ONE;
+            setInterrupt(bus, Interrupt.VBlank);
+          } else {
+            this._mode = Mode.TWO;
+            // TODO clear vblank interrupt?
+          }
+        }
+        break;
+      case Mode.ONE:
+        if (this._lineDot === 456) {
+          this._lineDot = 0;
+          if (this._LY === 153) {
+            this._LY = 0;
+            this._mode = Mode.TWO;
+          } else {
+            this._LY++;
+          }
+        }
+        break;
+      case Mode.TWO:
+        if (this._lineDot === 80) {
+          this._mode = Mode.THREE;
+        }
+        break;
+      case Mode.THREE:
+        if (this._lineDot === 80 + 168) {
+          this._mode = Mode.ZERO;
+        } else if (this._lineDot < 80 + SCREEN_WIDTH) {
+          this._drawPixel(this._lineDot - 80);
+        }
+        break;
+    }
+  }  
 }
 
 function screenColorForPalette(palette: number, index: number): ScreenColor {
   return (palette >> (index * 2)) & 0x03;
 }
 
-function lcdc4(ppu: PPU): boolean {
-  return (ppu.ioRegs[Register.LCDC] & (1 << 4)) != 0;
-}
-
 export const LCDC_ENABLED = 1 << 7;
-
-function calcBgPixel(ppu: PPU, x: number, y: number): ScreenColor {
-  const tileIndex = getBgTileIndex(ppu, Math.floor(x / 8), Math.floor(y / 8));
-  const tileAddr = bgTileImageVramOffset(lcdc4(ppu), tileIndex);
-  const tile = TileData(ppu.vram.slice(tileAddr, tileAddr + 16));
-  const tiley = y % 8;
-  const tilex = x % 8;
-  const [byte1, byte2] = [tile.tileData[tiley * 2], tile.tileData[tiley * 2 + 1]];
-  const highBit = (byte2 >> (7 - tilex)) & 0x01;
-  const lowBit = (byte1 >> (7 - tilex)) & 0x01;
-  const paletteIndex = (highBit << 1) | lowBit;
-  return screenColorForPalette(ppu.ioRegs[Register.BGP], paletteIndex);
-}
-
-function calcScreenPixel(ppu: PPU, x: number, y: number): ScreenColor {
-  if (x < 0 || x > SCREEN_WIDTH || y < 0 || y > SCREEN_HEIGHT) {
-    throw new Error(`Invalid pixel coordinates (${x}, ${y})`);
-  }
-  const bgx = (ppu.ioRegs[Register.SCX] + x) % BG_WIDTH;
-  const bgy = (ppu.ioRegs[Register.SCY] + y) % BG_HEIGHT;
-  const bgPixel = calcBgPixel(ppu, bgx, bgy);
-  // TODO Window
-  // TODO OAM
-  return bgPixel;
-}
-
-function setPixel(ppu: PPU, x: number, y: number, color: ScreenColor): void {
-  ppu.screenImage[y * SCREEN_WIDTH + x] = color;
-}
-
-function drawPixel(ppu: PPU, x: number): void {
-  const y = getY(ppu);
-  setPixel(ppu, x, y, calcScreenPixel(ppu, x, y));
-}
-
-export function tick(ppu: PPU, bus: Bus): void {
-  if ((ppu.ioRegs[Register.LCDC] & LCDC_ENABLED) === 0) {
-    return;
-  }
-  ppu.lineDot++;
-
-  const dmaSrcAddr = getDMASrcAddr(ppu);
-  if (dmaSrcAddr != null) {
-    for (let i = 0; i < ppu.oam.length; i++) {
-      ppu.oam[i] = bus.readb(dmaSrcAddr + i);
-    }
-    clearDMA(ppu);
-  }
-
-  switch (getMode(ppu)) {
-    case Mode.ZERO:
-      if (ppu.lineDot === 456) {
-        ppu.lineDot = 0;
-        setLine(ppu, getLine(ppu) + 1);
-        if (getLine(ppu) === 144) {
-          setMode(ppu, Mode.ONE);
-          setInterrupt(bus, Interrupt.VBlank);
-        } else {
-          setMode(ppu, Mode.TWO);
-          // TODO clear vblank interrupt?
-        }
-      }
-      break;
-    case Mode.ONE:
-      if (ppu.lineDot === 456) {
-        ppu.lineDot = 0;
-        if (getLine(ppu) === 153) {
-          setLine(ppu, 0);
-          setMode(ppu, Mode.TWO);
-        } else {
-          setLine(ppu, getLine(ppu) + 1);
-        }
-      }
-      break;
-    case Mode.TWO:
-      if (ppu.lineDot === 80) {
-        setMode(ppu, Mode.THREE);
-      }
-      break;
-    case Mode.THREE:
-      if (ppu.lineDot === 80 + 168) {
-        setMode(ppu, Mode.ZERO);
-      } else if (ppu.lineDot < 80 + SCREEN_WIDTH) {
-        drawPixel(ppu, ppu.lineDot - 80);
-      }
-      break;
-  }
-
-  setLYCoincidence(ppu, getLine(ppu) === getLYCompare(ppu));
-}
+const LCDC_BG_TILE_DATA_AREA = 1 << 4;
+const LCDC_BG_TILE_MAP_AREA = 1 << 3;
 
 // function renderBackground(imageData: ImageData, ppu: PPU): void {
 // }
@@ -316,42 +343,12 @@ export function tick(ppu: PPU, bus: Bus): void {
 // function renderFgSprites(imageData: ImageData, ppu: PPU): void {
 // }
 
-export function getBgTileIndex(ppu: PPU, x: number, y: number): number {
-  if (x < 0 || x > 31 || y < 0 || y > 31) {
-    throw new Error(`Invalid tile coordinates (${x}, ${y})`);
-  }
-  const bgTileMapBase = (ppu.ioRegs[Register.LCDC] & 0x08) ? 0x1C00 : 0x1800;
-  const bgTileMapOffset = (y * 32) + x;
-  const bgTileMapAddr = bgTileMapBase + bgTileMapOffset;
-  const tileIndex = ppu.vram[bgTileMapAddr];
-  return tileIndex;
-}
-
 /** Get the offset within the VRAM where the tile data begins for the specified tile index */
 export function bgTileImageVramOffset(lcdc4: boolean, index: number): number {
   if (!lcdc4 && index > 127) {
     index -= 0x100; // adjust signed
   }
   return (lcdc4 ? 0x0000 : 0x1000) + (index * 16);
-}
-
-export function makeBgImage(ppu: PPU): ImageData {
-  const canvas = new OffscreenCanvas(256, 256);
-  const ctx = canvas.getContext("2d");
-  if (ctx == null) {
-    throw new Error("Failed to get 2d context");
-  }
-  for (let y = 0; y < 32; y++) {
-    for (let x = 0; x < 32; x++) {
-      const tileIndex = getBgTileIndex(ppu, x, y);
-      const tileAddr = bgTileImageVramOffset((ppu.ioRegs[Register.LCDC] & (1 << 4)) != 0, tileIndex);
-      const tile = TileData(ppu.vram.slice(tileAddr, tileAddr + 16));
-      const tilePalette = makeTilePaletteImage(tile);
-      const tileImage = makeBgTileImage(tilePalette, ppu.ioRegs[Register.BGP], screenPalette);
-      ctx.putImageData(tileImage, x * 8, y * 8);
-    }
-  }
-  return ctx.getImageData(0, 0, 256, 256);
 }
 
 export function makeScreenImage(ppu: PPU): ImageData {

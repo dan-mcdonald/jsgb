@@ -20,10 +20,10 @@ function imageToData(image: NodeImage): NodeImageData {
 }
 
 async function postBootPPU(): Promise<PPU.PPU> {
-  const ppu = PPU.ppuBuild();
+  const ppu = new PPU.PPU();
   const bess = load(await readFile("test/fixtures/bootend.sna"));
-  ppu.vram = bess.vram;
-  ppu.ioRegs = bess.ioregs.slice(0x40, 0x40 + ppu.ioRegs.length);
+  bess.vram.forEach((v, i) => {ppu.writeVram(i, v);});
+  bess.ioregs.slice(0x40, 0x40 + PPU.REG_SIZE).forEach((v, i) => {ppu.writeIo(i, v);});
   return ppu;
 }
 
@@ -114,8 +114,8 @@ describe("ppu", (): void => {
 
   it("getBgTileIndex", async (): Promise<void> => {
     const ppu = await postBootPPU();
-    expect(PPU.getBgTileIndex(ppu, 0x0, 0x0)).to.equal(0x0);
-    expect(PPU.getBgTileIndex(ppu, 0x0D, 0x09)).to.equal(0x16);
+    expect(ppu._getBgTileIndex(0x0, 0x0)).to.equal(0x0);
+    expect(ppu._getBgTileIndex(0x0D, 0x09)).to.equal(0x16);
   });
 
   it("bgTileImageVramOffset", (): void => {
@@ -140,33 +140,34 @@ describe("ppu", (): void => {
   });
 
   it("makeBgImage", async (): Promise<void> => {
-    const actualImage = PPU.makeBgImage(await postBootPPU());
+    const ppu = await postBootPPU();
+    const actualImage = ppu._makeBgImage();
     // await pipeline(bgCanvas.createPNGStream(), createWriteStream("./dist/bootend-bg.png"));
     const expectedBootBg = imageToData(await loadImage("./test/fixtures/bootend-bg.png"));
     expect(actualImage).to.deep.equal(expectedBootBg);
   });
 
   it("ly timing", () => {
-    const ppu = PPU.ppuBuild();
+    const ppu = new PPU.PPU();
     const bus = {
       readb: (addr: number): number => { throw new Error("unhandled read to addr " + hex16(addr)); },
       writeb: (_: number, __: number): void => { },
     };
-    expect(PPU.getLine(ppu)).to.equal(0);
-    expect(ppu.lineDot).to.equal(0);
-    expect(PPU.getMode(ppu)).to.equal(PPU.Mode.TWO);
+    expect(ppu._LY).to.equal(0);
+    expect(ppu._lineDot).to.equal(0);
+    expect(ppu._mode).to.equal(PPU.Mode.TWO);
     // LCD is initially disabled so expect no change
-    PPU.tick(ppu, bus);
-    expect(PPU.getLine(ppu)).to.equal(0);
-    expect(ppu.lineDot).to.equal(0);
-    expect(PPU.getMode(ppu)).to.equal(PPU.Mode.TWO);
-    ppu.ioRegs[PPU.Register.LCDC] = 0x91;
+    ppu.tick(bus);
+    expect(ppu._LY).to.equal(0);
+    expect(ppu._lineDot).to.equal(0);
+    expect(ppu._mode).to.equal(PPU.Mode.TWO);
+    ppu._LCDC = 0x91;
     
     // Tick through a line
     for(let i = 0; i < 456; i++) {
-      PPU.tick(ppu, bus);
-      expect(ppu.lineDot).to.equal((i+1) % 456);
+      ppu.tick(bus);
+      expect(ppu._lineDot).to.equal((i+1) % 456);
     }
-    expect(PPU.getLine(ppu)).to.equal(1);
+    expect(ppu._LY).to.equal(1);
   });
 });

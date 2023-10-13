@@ -1,7 +1,7 @@
 import buildBus from "./buildBus";
 import { CPU, Flags, decodeInsn, initCPU, step } from "./cpu";
 import { argv } from "process";
-import { LCDC_ENABLED, Register, getLine, ppuBuild, tick } from "./ppu";
+import { LCDC_ENABLED, PPU, Register } from "./ppu";
 import { audioInit } from "./audio";
 import { init as timerInit } from "./timer";
 import { cartBuild } from "./cart";
@@ -35,15 +35,15 @@ cpu.regs.sp = 0xfffe;
 cpu.pc = 0x100;
 
 const interruptManager = initInterruptManager();
-const ppu = ppuBuild();
-ppu.ioRegs[Register.LCDC] |= LCDC_ENABLED;
+const ppu = new PPU();
+ppu.writeIo(Register.LCDC, ppu.readIo(Register.LCDC) | LCDC_ENABLED);
 const audio = audioInit();
 const cart = cartBuild(cartBytes);
 const timer = timerInit(interruptManager.requestTimerInterrupt);
 const bus = buildBus(interruptManager, null, cart, ppu, audio, timer);
 
-while (getLine(ppu) !== 0x90) {
-  tick(ppu, bus);
+while (ppu.readIo(Register.LY) !== 0x90) {
+  ppu.tick(bus);
 }
 
 let haltSteps = 0;

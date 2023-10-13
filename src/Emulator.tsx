@@ -68,7 +68,7 @@ export default function Emulator({ bootRomPromise, cartPromise }: { bootRomPromi
   const [runState, setRunState] = useState(RunState.Stopped);
   const interruptManager = initInterruptManager();
   const [cpu, setCpu] = useState(CPU.initCPU());
-  const [ppu, setPpu] = useState(PPU.ppuBuild());
+  const [ppu, setPpu] = useState(new PPU.PPU());
   const audio = audioInit();
   const timer = timerInit(interruptManager.requestTimerInterrupt);
   const [bus, setBus] = useState(buildBus(interruptManager, bootRom, cartBuild(cart), ppu, audio, timer));
@@ -103,7 +103,7 @@ export default function Emulator({ bootRomPromise, cartPromise }: { bootRomPromi
         const cycles = CPU.step(cpu, bus);
         frameCycles += cycles;
         for (let i = 0; i < cycles; i++) {
-          PPU.tick(ppu, bus);
+          ppu.tick(bus);
           timer.tick();
         }
         if (breakPoints.includes(cpu.pc)) {
@@ -129,7 +129,7 @@ export default function Emulator({ bootRomPromise, cartPromise }: { bootRomPromi
     const cycles = CPU.step(cpu, bus);
     setCycleCount(cycleCount + cycles);
     for (let i = 0; i < cycles; i++) {
-      PPU.tick(ppu, bus);
+      ppu.tick(bus);
     }
     setCpu(cpu);
     setPpu(ppu);

@@ -20,7 +20,7 @@ export default function buildBus(interruptManager: InterruptManager, bootRom: Ui
     if (addr <= 0x7fff || (addr >= 0xa000 && addr <= 0xbfff)) {
       cartWrite(cart, addr, val);
     } else if (addr >= 0x8000 && addr <= 0x9fff) {
-      ppu.vram[0x7fff & addr] = val;
+      ppu.writeVram(addr - 0x8000, val);
     } else if (addr >= 0xc000 && addr <= 0xdfff) {
       wram[addr - 0xc000] = val;
     } else if (addr == 0xff00) {
@@ -43,7 +43,7 @@ export default function buildBus(interruptManager: InterruptManager, bootRom: Ui
     } else if (addr >= 0xff10 && addr <= 0xff3f) {
       audio.ioRegs[addr - 0xff10] = val;
     } else if (addr >= 0xff40 && addr <= 0xff4f) {
-      ppu.ioRegs[addr & 0x0f] = val;
+      ppu.writeIo(addr & 0x0f, val);
     } else if (addr == 0xff50) {
       bootRom = null;
     } else if (addr >= 0xff80 && addr <= 0xfffe) {
@@ -68,7 +68,7 @@ export default function buildBus(interruptManager: InterruptManager, bootRom: Ui
     } else if (addr >= 0xff10 && addr <= 0xff3f) {
       return audio.ioRegs[addr - 0xff10];
     } else if (addr >= 0xff40 && addr <= 0xff4f) {
-      return ppu.ioRegs[addr & 0xf];
+      return ppu.readIo(addr - 0xff40);
     } else if (addr >= 0xff80 && addr <= 0xfffe) {
       return hram[addr - 0xff80];
     } else if (addr == 0xffff) {
