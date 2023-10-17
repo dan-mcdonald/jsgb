@@ -1,6 +1,7 @@
 /// <reference lib="dom" />
 import { Bus } from "./bus";
 import { Interrupt, setInterrupt } from "./interrupt";
+import { hex16 } from "./util";
 
 const SCREEN_WIDTH = 160;
 const SCREEN_HEIGHT = 144;
@@ -137,6 +138,13 @@ export enum Mode {
 const STAT_LYC = 0x04;
 const STAT_MODE = 0x03;
 
+type ObjectEntry = {
+  y: number;
+  x: number;
+  tileIndex: number;
+  flags: number;
+}
+
 export class PPU {
   _lineDot = 0;
   _mode = Mode.TWO;
@@ -194,12 +202,35 @@ export class PPU {
     this._vram[addr] = val;
   }
 
-  _oam = new Uint8Array(0xA0);
+  _oam = new Array<ObjectEntry>(40).fill({y: 0, x: 0, tileIndex: 0, flags: 0});
+  _oamCache = new Array<ObjectEntry>(10).fill({y: 0, x: 0, tileIndex: 0, flags: 0});
   readOam(addr: number): number {
-    return this._oam[addr];
+    if (addr < 0 || addr >= 0xA0) {
+      throw new Error(`Invalid OAM address ${addr}`);
+    }
+    const entry = this._oam[addr/4];
+    switch (addr % 4) {
+      case 0: return entry.y;
+      case 1: return entry.x;
+      case 2: return entry.tileIndex;
+      case 3: return entry.flags;
+      default:
+        throw new Error(`BUG: readOam can't handle 0x${hex16(addr)}`);
+    }
   }
   writeOam(addr: number, val: number): void {
-    this._oam[addr] = val;
+    if (addr < 0 || addr >= 0xA0) {
+      throw new Error(`Invalid OAM address ${addr}`);
+    }
+    const entry = this._oam[addr/4];
+    switch (addr % 4) {
+      case 0: entry.y = val; break;
+      case 1: entry.x = val; break;
+      case 2: entry.tileIndex = val; break;
+      case 3: entry.flags = val; break;
+      default:
+        throw new Error(`BUG: writeOam can't handle 0x${hex16(addr)}`);
+    }
   }
   _getDMASrcAddr(): number | null {
     if (this._DMA > 0xDF) {
@@ -238,6 +269,30 @@ export class PPU {
     const tileIndex = this._vram[bgTileMapAddr];
     return tileIndex;
   }
+  _findObj(x: number, y: number): ObjectEntry | null {
+    const height = (this._LCDC & LCDC_OBJ_SIZE) ? 16 : 8;
+    const width = 8;
+    for (const obj of this._oamCache) {
+      const topY = obj.y - 16;
+      const bottomY = topY + height;
+      const leftX = obj.x - 8;
+      const rightX = leftX + width;
+      if (x >= leftX && x < rightX && y >= topY && y < bottomY) {
+        return obj;
+      }
+    }
+    return null;
+  }
+  _calcObjPixel(x: number, y: number): ScreenColor | null {
+    if ((this._LCDC & LCDC_OBJ_ENABLE) === 0) {
+      return null;
+    }
+    const obj = this._findObj(x, y);
+    if (obj === null) {
+      return null;
+    }
+    return null;
+  }
   _calcBgPixel(x: number, y: number): ScreenColor {
     const tileIndex = this._getBgTileIndex(Math.floor(x / 8), Math.floor(y / 8));
     const tileAddr = bgTileImageVramOffset((this._LCDC & LCDC_BG_TILE_DATA_AREA) !== 0, tileIndex);
@@ -253,6 +308,10 @@ export class PPU {
   _calcScreenPixel(x: number, y: number): ScreenColor {
     if (x < 0 || x > SCREEN_WIDTH || y < 0 || y > SCREEN_HEIGHT) {
       throw new Error(`Invalid pixel coordinates (${x}, ${y})`);
+    }
+    const objPixel = this._calcObjPixel(x, y);
+    if (objPixel !== null) {
+      return objPixel;
     }
     const bgx = (this._SCX + x) % BG_WIDTH;
     const bgy = (this._SCY + y) % BG_HEIGHT;
@@ -276,8 +335,8 @@ export class PPU {
   
     const dmaSrcAddr = this._getDMASrcAddr();
     if (dmaSrcAddr != null) {
-      for (let i = 0; i < this._oam.length; i++) {
-        this._oam[i] = bus.readb(dmaSrcAddr + i);
+      for (let i = 0; i < 0xA0; i++) {
+        this.writeOam(i, bus.readb(dmaSrcAddr + i));
       }
       this._clearDMA();
     }
@@ -330,6 +389,8 @@ function screenColorForPalette(palette: number, index: number): ScreenColor {
 export const LCDC_ENABLED = 1 << 7;
 const LCDC_BG_TILE_DATA_AREA = 1 << 4;
 const LCDC_BG_TILE_MAP_AREA = 1 << 3;
+const LCDC_OBJ_SIZE = 1 << 2;
+const LCDC_OBJ_ENABLE = 1 << 1;
 
 // function renderBackground(imageData: ImageData, ppu: PPU): void {
 // }

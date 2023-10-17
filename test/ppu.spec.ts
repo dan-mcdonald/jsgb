@@ -3,10 +3,13 @@ import * as PPU from '../src/ppu';
 import { load } from "../src/bess";
 import { createCanvas, loadImage, ImageData } from 'canvas';
 import type { ImageData as NodeImageData, Image as NodeImage } from 'canvas';
-// import { pipeline } from 'node:stream/promises';
-// import { createWriteStream } from 'node:fs';
+import { pipeline } from 'node:stream/promises';
+import { createWriteStream } from 'node:fs';
+import { join } from 'node:path';
 import { readFile } from "node:fs/promises";
 import { hex16 } from '../src/util';
+import { loadSystem } from '../src/state';
+import { System } from '../src/system';
 
 // use canvas to polyfill ImageData when running tests in node
 (global as { [key: string]: any })["ImageData"] = ImageData; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -19,12 +22,21 @@ function imageToData(image: NodeImage): NodeImageData {
   return canvasCtx.getImageData(0, 0, image.width, image.height);
 }
 
-async function postBootPPU(): Promise<PPU.PPU> {
-  const ppu = new PPU.PPU();
-  const bess = load(await readFile("test/fixtures/bootend.sna"));
-  bess.vram.forEach((v, i) => {ppu.writeVram(i, v);});
-  bess.ioregs.slice(0x40, 0x40 + PPU.REG_SIZE).forEach((v, i) => {ppu.writeIo(i, v);});
-  return ppu;
+async function fromSaveState(name: string): Promise<System> {
+  const path = join(".", "test", "fixtures", name);
+  const bess = load(await readFile(path));
+  const cart = {
+    rom: new Uint8Array(),
+    bank1Idx: 1,
+    ramEnable: false,
+    ram: null,
+    cartType: {
+      mbc: 0,
+      ram: false,
+      battery: false,
+    },
+  };
+  return loadSystem(cart, bess);
 }
 
 describe("ppu", (): void => {
@@ -113,7 +125,7 @@ describe("ppu", (): void => {
   });
 
   it("getBgTileIndex", async (): Promise<void> => {
-    const ppu = await postBootPPU();
+    const {ppu} = await fromSaveState("bootend.sna");
     expect(ppu._getBgTileIndex(0x0, 0x0)).to.equal(0x0);
     expect(ppu._getBgTileIndex(0x0D, 0x09)).to.equal(0x16);
   });
@@ -140,7 +152,7 @@ describe("ppu", (): void => {
   });
 
   it("makeBgImage", async (): Promise<void> => {
-    const ppu = await postBootPPU();
+    const {ppu} = await fromSaveState("bootend.sna");
     const actualImage = ppu._makeBgImage();
     // await pipeline(bgCanvas.createPNGStream(), createWriteStream("./dist/bootend-bg.png"));
     const expectedBootBg = imageToData(await loadImage("./test/fixtures/bootend-bg.png"));
@@ -169,5 +181,19 @@ describe("ppu", (): void => {
       expect(ppu._lineDot).to.equal((i+1) % 456);
     }
     expect(ppu._LY).to.equal(1);
+  });
+
+  it("draws sprites", async () => {
+    const {ppu, bus} = await fromSaveState("zelda-title.sna");
+    while (ppu._LY < 144) {
+      ppu.tick(bus);
+    }
+    const actualImage = PPU.makeScreenImage(ppu);
+    const canvas = createCanvas(160, 144);
+    const ctx = canvas.getContext("2d");
+    ctx.putImageData(actualImage, 0, 0);
+    await pipeline(canvas.createPNGStream(), createWriteStream("./dist/zelda-title.png"));
+    // const expected = imageToData(await loadImage("./test/fixtures/sprites-bg.png"));
+    // expect(actualImage).to.deep.equal(expected);
   });
 });

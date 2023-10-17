@@ -7,7 +7,7 @@ function arrayEqual(a: Uint8Array, b: Uint8Array): boolean {
   return a.every((value, index) => value === b[index]);
 }
 
-interface BESSFile {
+export interface BESSFile {
   vram: Uint8Array
   ioregs: Uint8Array
 }
