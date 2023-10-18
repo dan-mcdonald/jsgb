@@ -185,9 +185,17 @@ describe("ppu", (): void => {
 
   it("draws sprites", async () => {
     const {ppu, bus} = await fromSaveState("zelda-title.sna");
+
+    // Objects at indices 12 and 13 have y=0x28 so it's 0x18 pixels from the top of the screen
+    // step through until we're in the middle of it and check that everything is correct
+    while (ppu._LY !== 0x1E && ppu._mode !== PPU.Mode.THREE) {
+      ppu.tick(bus);
+    }
+    expect(ppu.readOam(12*4 + 0), "y").to.equal(0x28);
     while (ppu._LY < 144) {
       ppu.tick(bus);
     }
+      
     const actualImage = PPU.makeScreenImage(ppu);
     const canvas = createCanvas(160, 144);
     const ctx = canvas.getContext("2d");

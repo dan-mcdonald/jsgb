@@ -10,6 +10,7 @@ function arrayEqual(a: Uint8Array, b: Uint8Array): boolean {
 export interface BESSFile {
   vram: Uint8Array
   ioregs: Uint8Array
+  oam: Uint8Array
 }
 
 function getFooter(contents: Uint8Array): Uint8Array {
@@ -33,8 +34,9 @@ export function load(contents: Uint8Array): BESSFile {
   }
   let pos = headerOffset(contents);
   let done = false;
-  let vram = new Uint8Array(0);
-  let ioregs = new Uint8Array(0);
+  let vram = new Uint8Array();
+  let ioregs = new Uint8Array();
+  let oam = new Uint8Array();
   while (!done) {
     const blockTag = contents.slice(pos, pos + 4);
     const blockLength = asLEInt(contents.slice(pos + 4, pos + 8));
@@ -42,14 +44,22 @@ export function load(contents: Uint8Array): BESSFile {
     if (arrayEqual(blockTag, encoder.encode("END "))) {
       done = true;
     } else if (arrayEqual(blockTag, encoder.encode("CORE"))) {
+      ioregs = contents.slice(pos + 0x18, pos + 0x18 + 128);
+
       const vramSize = asLEInt(contents.slice(pos + 0xA0, pos + 0xA0 + 4));
       const vramOffset = asLEInt(contents.slice(pos + 0xA4, pos + 0xA4 + 4));
       vram = contents.slice(vramOffset, vramOffset + vramSize);
-      ioregs = contents.slice(pos + 0x18, pos + 0x18 + 128);
+
+      const oamSize = asLEInt(contents.slice(pos + 0xB0, pos + 0xB0 + 4));
+      if (oamSize !== 0xA0) {
+        throw new Error("Unexpected OAM size " + oamSize);
+      }
+      const oamOffset = asLEInt(contents.slice(pos + 0xB4, pos + 0xB4 + 4));
+      oam = contents.slice(oamOffset, oamOffset + oamSize);
     }
     pos += blockLength;
   }
-  return {vram, ioregs};
+  return {vram, oam, ioregs};
 }
 
 export function headerOffset(contents: Uint8Array): number {

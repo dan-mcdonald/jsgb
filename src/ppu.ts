@@ -1,7 +1,8 @@
 /// <reference lib="dom" />
+import { BESSFile } from "./bess";
 import { Bus } from "./bus";
 import { Interrupt, setInterrupt } from "./interrupt";
-import { hex16 } from "./util";
+import { hex16, hex8 } from "./util";
 
 const SCREEN_WIDTH = 160;
 const SCREEN_HEIGHT = 144;
@@ -162,7 +163,16 @@ export class PPU {
   _OBP1 = 0xff;
   _WY = 0x00;
   _WX = 0x00;
-
+  _dmaSrcAddr: number | null = null;
+  _dmaSrcAddrOffset = 0;
+  constructor(state?: BESSFile) {
+    if (state !== undefined) {
+      state.vram.forEach((v, i) => { this.writeVram(i, v); });
+      state.ioregs.slice(0x40, 0x40 + REG_SIZE).forEach((v, i) => { this.writeIo(i, v); });
+      state.oam.forEach((v, i) => { this.writeOam(i, v); });
+      this._clearDMA();
+    }
+  }
   readIo(reg: Register): number {
     switch(reg) {
       case Register.LCDC: return this._LCDC;
@@ -187,7 +197,13 @@ export class PPU {
       case Register.SCX: this._SCX = val; break;
       case Register.LY: this._LY = val; break;
       case Register.LYC: this._LYC = val; break;
-      case Register.DMA: this._DMA = val; break;
+      case Register.DMA:
+        if (this._isDMAInProgress()) {
+          throw new Error(`DMA already in progress`);
+        }
+        this._DMA = val;
+        this._startDMA();
+        break;
       case Register.BGP: this._BGP = val; break;
       case Register.OBP0: this._OBP0 = val; break;
       case Register.OBP1: this._OBP1 = val; break;
@@ -202,13 +218,19 @@ export class PPU {
     this._vram[addr] = val;
   }
 
-  _oam = new Array<ObjectEntry>(40).fill({y: 0, x: 0, tileIndex: 0, flags: 0});
-  _oamCache = new Array<ObjectEntry>(10).fill({y: 0, x: 0, tileIndex: 0, flags: 0});
+  private readonly _oam: Array<ObjectEntry> = Array.from({length: 40}, () => ({y: 0, x: 0, tileIndex: 0, flags: 0}));
+  private _oamCache = new Array<ObjectEntry>();
+  private _oamScan(): void {
+    const y = this._LY + 16;
+    const objHeight = (this._LCDC & LCDC_OBJ_SIZE ? 16 : 8);
+    this._oamCache = this._oam.filter((obj) => y >= obj.y && y < (obj.y + objHeight));
+  }
   readOam(addr: number): number {
     if (addr < 0 || addr >= 0xA0) {
       throw new Error(`Invalid OAM address ${addr}`);
     }
-    const entry = this._oam[addr/4];
+    const idx = Math.floor(addr/4);
+    const entry = this._oam[idx];
     switch (addr % 4) {
       case 0: return entry.y;
       case 1: return entry.x;
@@ -222,7 +244,8 @@ export class PPU {
     if (addr < 0 || addr >= 0xA0) {
       throw new Error(`Invalid OAM address ${addr}`);
     }
-    const entry = this._oam[addr/4];
+    const idx = Math.floor(addr/4);
+    const entry = this._oam[idx];
     switch (addr % 4) {
       case 0: entry.y = val; break;
       case 1: entry.x = val; break;
@@ -232,14 +255,32 @@ export class PPU {
         throw new Error(`BUG: writeOam can't handle 0x${hex16(addr)}`);
     }
   }
+  _startDMA(): void {
+    this._dmaSrcAddr = this._getDMASrcAddr();
+    this._dmaSrcAddrOffset = 0;
+  }
+  _clearDMA(): void {
+    this._dmaSrcAddr = null;
+    this._dmaSrcAddrOffset = 0;
+  }
+  _isDMAInProgress(): boolean {
+    return this._dmaSrcAddr != null;
+  }
+  _DMATick(bus: Bus): void {
+    if (this._dmaSrcAddr == null) {
+      return;
+    }
+    this.writeOam(this._dmaSrcAddrOffset, bus.readb(this._dmaSrcAddr + this._dmaSrcAddrOffset));
+    this._dmaSrcAddrOffset++;
+    if (this._dmaSrcAddrOffset === 0xA0) {
+      this._clearDMA();
+    }
+  }
   _getDMASrcAddr(): number | null {
     if (this._DMA > 0xDF) {
       return null;
     }
     return this._DMA * 0x0100;
-  }
-  _clearDMA(): void {
-    this._DMA = 0xFF;
   }
   _makeBgImage(): ImageData {
     const canvas = new OffscreenCanvas(256, 256);
@@ -269,27 +310,15 @@ export class PPU {
     const tileIndex = this._vram[bgTileMapAddr];
     return tileIndex;
   }
-  _findObj(x: number, y: number): ObjectEntry | null {
-    const height = (this._LCDC & LCDC_OBJ_SIZE) ? 16 : 8;
-    const width = 8;
-    for (const obj of this._oamCache) {
-      const topY = obj.y - 16;
-      const bottomY = topY + height;
-      const leftX = obj.x - 8;
-      const rightX = leftX + width;
-      if (x >= leftX && x < rightX && y >= topY && y < bottomY) {
-        return obj;
-      }
-    }
-    return null;
+  _findObjs(x: number): Array<ObjectEntry> {
+    return this._oamCache.filter((obj) => x >= (obj.x - 8) && x < obj.x);
   }
   _calcObjPixel(x: number, y: number): ScreenColor | null {
     if ((this._LCDC & LCDC_OBJ_ENABLE) === 0) {
       return null;
     }
-    const obj = this._findObj(x, y);
-    if (obj === null) {
-      return null;
+    for(const obj of this._findObjs(x)) {
+      throw new Error(`_calcObjPixel(x=${x}, y=${y}) should draw on object ${JSON.stringify(obj)}`);
     }
     return null;
   }
@@ -333,12 +362,8 @@ export class PPU {
     }
     this._lineDot++;
   
-    const dmaSrcAddr = this._getDMASrcAddr();
-    if (dmaSrcAddr != null) {
-      for (let i = 0; i < 0xA0; i++) {
-        this.writeOam(i, bus.readb(dmaSrcAddr + i));
-      }
-      this._clearDMA();
+    if (this._isDMAInProgress()) {
+      this._DMATick(bus);
     }
   
     switch (this._mode) {
@@ -351,7 +376,6 @@ export class PPU {
             setInterrupt(bus, Interrupt.VBlank);
           } else {
             this._mode = Mode.TWO;
-            // TODO clear vblank interrupt?
           }
         }
         break;
@@ -368,6 +392,7 @@ export class PPU {
         break;
       case Mode.TWO:
         if (this._lineDot === 80) {
+          this._oamScan();
           this._mode = Mode.THREE;
         }
         break;
