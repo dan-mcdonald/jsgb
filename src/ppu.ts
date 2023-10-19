@@ -9,6 +9,11 @@ const SCREEN_HEIGHT = 144;
 const BG_WIDTH = 256;
 const BG_HEIGHT = 256;
 
+const OAM_FLAG_PRIORITY = 1 << 7;
+const OAM_FLAG_Y_FLIP = 1 << 6;
+const OAM_FLAG_X_FLIP = 1 << 5;
+const OAM_FLAG_PALETTE = 1 << 4;
+
 interface Color { bytes: Uint8Array }
 export type Palette = [Color, Color, Color, Color];
 
@@ -144,6 +149,14 @@ type ObjectEntry = {
   x: number;
   tileIndex: number;
   flags: number;
+}
+
+export function calcTilePixel(tile: TileData, tilex: number, tiley: number): number {
+  const [byte1, byte2] = [tile.tileData[tiley * 2], tile.tileData[tiley * 2 + 1]];
+  const highBit = (byte2 >> (7 - tilex)) & 0x01;
+  const lowBit = (byte1 >> (7 - tilex)) & 0x01;
+  const paletteIndex = (highBit << 1) | lowBit;
+  return paletteIndex;
 }
 
 export class PPU {
@@ -317,8 +330,27 @@ export class PPU {
     if ((this._LCDC & LCDC_OBJ_ENABLE) === 0) {
       return null;
     }
+    const oamX = x + 8;
+    const oamY = y + 16;
+    const objHeight = (this._LCDC & LCDC_OBJ_SIZE) !== 0 ? 16 : 8;
     for(const obj of this._findObjs(x)) {
-      throw new Error(`_calcObjPixel(x=${x}, y=${y}) should draw on object ${JSON.stringify(obj)}`);
+      const xFlip = (obj.flags & OAM_FLAG_X_FLIP) !== 0;
+      const yFlip = (obj.flags & OAM_FLAG_Y_FLIP) !== 0;
+      if ((obj.flags & (OAM_FLAG_PRIORITY)) !== 0) {
+        throw new Error("Unimplemented OAM flags " + hex8(obj.flags));
+      }
+      const objXOffset = oamX - obj.x;
+      const objYOffset = oamY - obj.y;
+      const tileXOffset = xFlip ? 8 - objXOffset : objXOffset;
+      const tileYOffset = yFlip ? objHeight - objYOffset : objYOffset;
+      const tileAddr = oamTileImageVramOffset((this._LCDC & LCDC_OBJ_SIZE) !== 0, obj.tileIndex, tileYOffset);
+      const tile = TileData(this._vram.slice(tileAddr, tileAddr + 16));
+      const paletteIndex = calcTilePixel(tile, tileXOffset, tileYOffset % 8);
+      if (paletteIndex === 0) {
+        continue;
+      }
+      const palette = (obj.flags & OAM_FLAG_PALETTE) ? this._OBP1 : this._OBP0;
+      return screenColorForPalette(palette, paletteIndex);
     }
     return null;
   }
@@ -328,10 +360,7 @@ export class PPU {
     const tile = TileData(this._vram.slice(tileAddr, tileAddr + 16));
     const tiley = y % 8;
     const tilex = x % 8;
-    const [byte1, byte2] = [tile.tileData[tiley * 2], tile.tileData[tiley * 2 + 1]];
-    const highBit = (byte2 >> (7 - tilex)) & 0x01;
-    const lowBit = (byte1 >> (7 - tilex)) & 0x01;
-    const paletteIndex = (highBit << 1) | lowBit;
+    const paletteIndex = calcTilePixel(tile, tilex, tiley);
     return screenColorForPalette(this._BGP, paletteIndex);
   }
   _calcScreenPixel(x: number, y: number): ScreenColor {
@@ -435,6 +464,18 @@ export function bgTileImageVramOffset(lcdc4: boolean, index: number): number {
     index -= 0x100; // adjust signed
   }
   return (lcdc4 ? 0x0000 : 0x1000) + (index * 16);
+}
+
+export function oamTileImageVramOffset(doubleTiles: boolean, index: number, yPos: number): number {
+  if (doubleTiles) {
+    index &= ~0x01;
+    if (yPos >= 8) {
+      index++;
+    }
+  } else if(yPos >= 8) {
+    throw new Error(`Tried to get lower tile for short object`);
+  }
+  return index * 16;
 }
 
 export function makeScreenImage(ppu: PPU): ImageData {
