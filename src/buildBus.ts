@@ -1,7 +1,7 @@
 import { Bus } from "./bus";
 import { hex8, hex16 } from "./util";
 import { PPU } from "./ppu";
-import { Audio } from "./audio";
+import { Audio, IoReg as AudioIoReg } from "./audio";
 import { Cart, cartRead, cartWrite } from "./cart";
 import { Timer } from "./timer";
 import { InterruptManager } from "./interruptManager";
@@ -41,7 +41,12 @@ export default function buildBus(interruptManager: InterruptManager, bootRom: Ui
     } else if (addr == 0xff0f) {
       interruptManager.write(val);
     } else if (addr >= 0xff10 && addr <= 0xff3f) {
-      audio.ioRegs[addr - 0xff10] = val;
+      const audioReg = addr - 0xff10;
+      if (audioReg in AudioIoReg) {
+        audio.writeIo(audioReg, val);
+      } else {
+        throw new Error(`writeb unsupported addr ${hex16(addr)}`);
+      }
     } else if (addr >= 0xff40 && addr <= 0xff4f) {
       ppu.writeIo(addr & 0x0f, val);
     } else if (addr == 0xff50) {
@@ -66,7 +71,12 @@ export default function buildBus(interruptManager: InterruptManager, bootRom: Ui
     } else if (addr == 0xff0f) {
       return interruptManager.read();
     } else if (addr >= 0xff10 && addr <= 0xff3f) {
-      return audio.ioRegs[addr - 0xff10];
+      const audioReg = addr - 0xff10;
+      if (audioReg in AudioIoReg) {
+        return audio.readIo(audioReg);
+      } else {
+        throw new Error(`readb unsupported addr ${hex16(addr)}`);
+      }
     } else if (addr >= 0xff40 && addr <= 0xff4f) {
       return ppu.readIo(addr - 0xff40);
     } else if (addr >= 0xff80 && addr <= 0xfffe) {
