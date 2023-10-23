@@ -6,7 +6,7 @@ import { readFile } from "fs/promises";
 import { readFileSync } from "fs";
 import { cartBuild } from "../src/cart";
 import * as PPU from "../src/ppu";
-import { audioInit } from "../src/audio";
+import { NullAPU } from "../src/audio";
 import { init as timerInit } from "../src/timer";
 import { load as bessLoad } from "../src/bess";
 import { hex16, hex8 } from "../src/util";
@@ -465,14 +465,14 @@ function loadCart(): Promise<Uint8Array> {
   return readFile("test/fixtures/cpu_instrs.gb");
 }
 
-describe("bootrom", (): void => {
+describe("runs bootrom", (): void => {
   it("vram matches", async (): Promise<void> => {
     const cpu = initCPU();
     const interruptManager = initInterruptManager();
     const bootRom = await loadBootRom();
     const cart = cartBuild(await loadCart());
     const ppu = new PPU.PPU();
-    const audio = audioInit();
+    const audio = new NullAPU();
     const timer = timerInit(interruptManager.requestTimerInterrupt);
 
     const bus = buildBus(interruptManager, bootRom, cart, ppu, audio, timer);

@@ -1,6 +1,6 @@
 // System state save/load
 
-import { audioInit } from "./audio";
+import { APU } from "./audio";
 import { BESSFile } from "./bess";
 import buildBus from "./buildBus";
 import { Cart } from "./cart";
@@ -15,7 +15,7 @@ export function loadSystem(cart: Cart, state?: BESSFile): System {
 
   const interruptManager = initInterruptManager();
   const ppu = new PPU(state);
-  const audio = audioInit();
+  const audio = new APU();
   const timer = timerInit(interruptManager.requestTimerInterrupt);
   const bus = buildBus(interruptManager, null, cart, ppu, audio, timer);
   return { cpu, bus, ppu };

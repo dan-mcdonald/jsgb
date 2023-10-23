@@ -2,7 +2,7 @@ import { } from 'react/canary';
 import React, { MutableRefObject, useEffect, useRef } from "react";
 import { use, useState, useCallback, KeyboardEvent } from "react";
 import * as PPU from "./ppu";
-import { audioInit } from "./audio";
+import { APU } from "./audio";
 import { init as timerInit} from "./timer";
 import * as CPU from "./cpu";
 import buildBus from "./buildBus";
@@ -69,7 +69,7 @@ export default function Emulator({ bootRomPromise, cartPromise }: { bootRomPromi
   const interruptManager = initInterruptManager();
   const [cpu, setCpu] = useState(CPU.initCPU());
   const [ppu, setPpu] = useState(new PPU.PPU());
-  const audio = audioInit();
+  const audio = new APU();
   const timer = timerInit(interruptManager.requestTimerInterrupt);
   const [bus, setBus] = useState(buildBus(interruptManager, bootRom, cartBuild(cart), ppu, audio, timer));
   const [cycleCount, setCycleCount] = useState(0);

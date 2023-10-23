@@ -48,15 +48,56 @@ export enum IoReg {
   WAVE_F = 0x2f
 }
 
-export function audioInit(): Audio {
-  const regs = new Uint8Array(0x30);
-  return {
-    readIo(addr: IoReg): number {
-      return regs[addr];
-    },
-    writeIo(addr: IoReg, val: number): void {
-      console.error(`audio write ${IoReg[addr]} 0x${hex8(val)}`);
-      regs[addr] = val;
+const NR14_TRIGGER = 0x80;
+const NR14_LENGTH = 0x40;
+// const NR14_PERIOD_HI_MASK = 0x07;
+
+const NR50_VIN_LEFT = 0x80;
+const NR50_VIN_RIGHT = 0x08;
+
+const NR52_POWER = 0x80;
+
+export class NullAPU implements Audio {
+  readIo(_: IoReg): number {
+    return 0;
+  }
+  writeIo(_: IoReg, __: number): void {
+  }
+}
+
+export class APU implements Audio {
+  private readonly regs = new Uint8Array(0x30);
+  readIo(addr: IoReg): number {
+    return this.regs[addr];
+  }
+  writeIo(addr: IoReg, val: number): void {
+    switch (addr) {
+      case IoReg.NR14:
+        if ((val & NR14_TRIGGER) !== 0) {
+          throw new Error("audio trigger not supported");
+        }
+        this.regs[addr] = val | NR14_LENGTH;
+        break;
+      case IoReg.NR50:
+        if ((val & (NR50_VIN_LEFT | NR50_VIN_RIGHT)) !== 0) {
+          throw new Error("audio vin not supported");
+        }
+        this.regs[addr] = val;
+        break;
+      case IoReg.NR52:
+        this.regs[addr] = val | NR52_POWER;
+        if ((val & NR52_POWER) === 0) {
+          throw new Error("audio power off");
+        }
+        return;
+      case IoReg.NR11:
+      case IoReg.NR12:
+      case IoReg.NR13:
+      case IoReg.NR51:
+        this.regs[addr] = val;
+        break;
+      default:
+        throw new Error(`audio write ${IoReg[addr]} 0x${hex8(val)}`);
     }
-  };
+  }
 }
