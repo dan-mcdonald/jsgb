@@ -14,6 +14,7 @@ import { globSync as glob } from "glob";
 import { basename } from "path";
 import { EOL } from "os";
 import { initInterruptManager } from "../src/interruptManager";
+import { loadBootRom, loadCart } from "./util";
 
 const readb_error = (_: number): number => { throw new Error("unexpected read"); };
 const writeb_error = (_: number, __: number): void => { throw new Error("unexpected write"); };
@@ -456,14 +457,6 @@ describe("add_r16_r16_imm", (): void => {
     expect(cpu.f.C(), "C").to.be.true;
   });
 });
-
-function loadBootRom(): Promise<Uint8Array> {
-  return readFile("dist/DMG_ROM.bin");
-}
-
-function loadCart(): Promise<Uint8Array> {
-  return readFile("test/fixtures/cpu_instrs.gb");
-}
 
 describe("runs bootrom", (): void => {
   it("vram matches", async (): Promise<void> => {
